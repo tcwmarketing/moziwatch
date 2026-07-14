@@ -28,3 +28,10 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+          BETTER_AUTH_SECRET: ci-only-placeholder-secret-at-least-32-bytes
+          BETTER_AUTH_URL: http://localhost:3000
+          IP_HASH_SECRET: ci-only-placeholder-ip-secret-32-bytes
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          NEXT_PUBLIC_PROTOMAPS_API_KEY: ci-build-placeholder
