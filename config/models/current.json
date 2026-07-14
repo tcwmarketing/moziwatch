@@ -1,0 +1,35 @@
+{
+  "kind": "weather-index-beta",
+  "status": "beta",
+  "version": "mosquito-weather-beta-v1",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "usesUserReports": false,
+  "evaluation": {
+    "method": "expert-configured-not-trained",
+    "auc": null,
+    "brier": null
+  },
+  "weights": {
+    "temperature": 0.28,
+    "humidity": 0.18,
+    "dewPoint": 0.14,
+    "recentRain": 0.18,
+    "soilMoisture": 0.14,
+    "lowWind": 0.08
+  },
+  "parameters": {
+    "temperatureOptimalC": 26,
+    "temperatureSpreadC": 9,
+    "humidityFloorPercent": 35,
+    "humidityCeilingPercent": 90,
+    "dewPointFloorC": 5,
+    "dewPointCeilingC": 20,
+    "precipitationScaleMm": 30,
+    "soilMoistureDry": 0.08,
+    "soilMoistureWet": 0.35,
+    "windCalmKmh": 2,
+    "windStrongKmh": 25,
+    "coldCutoffC": 5
+  },
+  "notes": "Beta weather-suitability index configured from general mosquito ecology expectations. It has not been trained or validated using Camp Signal user reports. Replace it with a reviewed trained artifact after sufficient representative observations are available."
+}

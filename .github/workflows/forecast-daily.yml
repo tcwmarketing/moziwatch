@@ -1,0 +1,45 @@
+name: Daily mosquito forecast
+
+on:
+  schedule:
+    - cron: "15 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-mosquito-forecast
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      OPEN_METEO_API_KEY: ${{ secrets.OPEN_METEO_API_KEY }}
+      OPEN_METEO_BASE_URL: ${{ vars.OPEN_METEO_BASE_URL }}
+      FORECAST_GRID_DEGREES: ${{ vars.FORECAST_GRID_DEGREES }}
+    steps:
+      - name: Check forecast configuration
+        id: config
+        shell: bash
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::Add the DATABASE_URL repository secret to enable forecast publication."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v4
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.config.outputs.configured == 'true'
+        run: npm ci
+      - if: steps.config.outputs.configured == 'true'
+        run: npm run forecast:run
