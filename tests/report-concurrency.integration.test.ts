@@ -19,18 +19,25 @@ describe.skipIf(!enabled)("database duplicate concurrency", () => {
       anonymousTokenHash: `token-${Date.now()}`,
       ipHash: `ip-${Date.now()}`,
     };
-    const results = await Promise.allSettled([
-      createReport(input),
-      createReport(input),
-    ]);
-    expect(
-      results.filter((result) => result.status === "fulfilled"),
-    ).toHaveLength(1);
-    const rejected = results.find(
-      (result) => result.status === "rejected",
-    ) as PromiseRejectedResult;
-    expect(rejected.reason).toBeInstanceOf(DuplicateReportError);
-    await sqlClient`DELETE FROM campgrounds WHERE id = ${campground[0].id}::uuid`;
-    await sqlClient.end();
+    try {
+      const results = await Promise.allSettled([
+        createReport(input),
+        createReport(input),
+      ]);
+      expect(
+        results.filter((result) => result.status === "fulfilled"),
+      ).toHaveLength(1);
+      const rejected = results.find(
+        (result) => result.status === "rejected",
+      ) as PromiseRejectedResult;
+      expect(rejected.reason).toBeInstanceOf(DuplicateReportError);
+    } finally {
+      await sqlClient.begin(async (tx) => {
+        await tx`DELETE FROM reports WHERE campground_id = ${campground[0].id}::uuid`;
+        await tx`DELETE FROM campground_aggregates WHERE campground_id = ${campground[0].id}::uuid`;
+        await tx`DELETE FROM campgrounds WHERE id = ${campground[0].id}::uuid`;
+      });
+      await sqlClient.end();
+    }
   });
 });

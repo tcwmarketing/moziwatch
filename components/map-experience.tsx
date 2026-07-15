@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type {
+  FillLayerSpecification,
   GeoJSONSource,
   Map as MapLibreMap,
   MapLayerMouseEvent,
   StyleSpecification,
 } from "maplibre-gl";
 import { MARKER_STATES } from "@/config/ratings";
+import { findWaterMaskPlacement } from "@/lib/map-layers";
 import { ReportForm } from "./report-form";
 
 type MapConfig = {
@@ -173,57 +175,80 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
           type: "geojson",
           data: emptyCollection,
         });
-        map.addLayer({
-          id: "mosquito-forecast-heat",
-          type: "heatmap",
-          source: "mosquito-forecast",
-          maxzoom: 11,
-          paint: {
-            "heatmap-weight": [
-              "interpolate",
-              ["linear"],
-              ["get", "score"],
-              0,
-              0,
-              1,
-              1,
-            ],
-            "heatmap-intensity": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              2,
-              0.65,
-              9,
-              2,
-            ],
-            "heatmap-radius": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              2,
-              18,
-              9,
-              48,
-            ],
-            "heatmap-opacity": 0.68,
-            "heatmap-color": [
-              "interpolate",
-              ["linear"],
-              ["heatmap-density"],
-              0,
-              "rgba(247,243,222,0)",
-              0.25,
-              "#f1d65c",
-              0.5,
-              "#ee973f",
-              0.75,
-              "#c84c36",
-              1,
-              "#6f1d3b",
-            ],
+        const waterMask = findWaterMaskPlacement(map.getStyle().layers);
+        map.addLayer(
+          {
+            id: "mosquito-forecast-heat",
+            type: "heatmap",
+            source: "mosquito-forecast",
+            maxzoom: 11,
+            paint: {
+              "heatmap-weight": [
+                "interpolate",
+                ["linear"],
+                ["get", "score"],
+                0,
+                0,
+                1,
+                1,
+              ],
+              "heatmap-intensity": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                2,
+                0.55,
+                9,
+                2,
+              ],
+              "heatmap-radius": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                2,
+                30,
+                6,
+                48,
+                9,
+                64,
+              ],
+              "heatmap-opacity": 0.68,
+              "heatmap-color": [
+                "interpolate",
+                ["linear"],
+                ["heatmap-density"],
+                0,
+                "rgba(247,243,222,0)",
+                0.25,
+                "#f1d65c",
+                0.5,
+                "#ee973f",
+                0.75,
+                "#c84c36",
+                1,
+                "#6f1d3b",
+              ],
+            },
           },
-        });
+          waterMask?.layer.id,
+        );
+        if (waterMask) {
+          const originalWaterLayer = waterMask.layer as FillLayerSpecification;
+          map.addLayer(
+            {
+              ...originalWaterLayer,
+              id: "mosquito-forecast-water-mask",
+              paint: {
+                ...originalWaterLayer.paint,
+                // A fractionally translucent duplicate renders after the
+                // heatmap and prevents its blur from showing through water.
+                "fill-opacity": 0.999,
+                "fill-antialias": false,
+              },
+            },
+            waterMask.beforeId,
+          );
+        }
         map.addSource("campgrounds", {
           type: "geojson",
           data: emptyCollection,
@@ -480,8 +505,8 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
           ))}
         </div>
         <p>
-          <b className="heat-swatch" /> Beta weather suitability forecast, not
-          direct observations or camper reports
+          <b className="heat-swatch" /> Beta weather suitability forecast on
+          land; water areas are masked
         </p>
         <small>{forecastMeta}</small>
       </div>
