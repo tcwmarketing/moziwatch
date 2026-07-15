@@ -3,6 +3,7 @@ import { z } from "zod";
 import { sqlClient } from "@/db";
 import { getApiAdmin } from "@/lib/api-admin";
 import { isSameOrigin } from "@/lib/privacy";
+import { toPostgresJson } from "@/lib/postgres-json";
 
 const input = z.object({ active: z.boolean() });
 export async function PATCH(
@@ -26,7 +27,7 @@ export async function PATCH(
   const { id } = await params;
   await sqlClient.begin(async (tx) => {
     await tx`UPDATE campgrounds SET active = ${parsed.data.active}, updated_at = now() WHERE id = ${id}::uuid`;
-    await tx`INSERT INTO admin_audit_logs (actor_id, action, target_type, target_id, details) VALUES (${admin.user.id}, 'set_campground_active', 'campground', ${id}, ${tx.json({ active: parsed.data.active })})`;
+    await tx`INSERT INTO admin_audit_logs (actor_id, action, target_type, target_id, details) VALUES (${admin.user.id}, 'set_campground_active', 'campground', ${id}, ${toPostgresJson({ active: parsed.data.active })}::jsonb)`;
   });
   return NextResponse.json({ ok: true });
 }

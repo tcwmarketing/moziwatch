@@ -4,6 +4,7 @@ import { sqlClient } from "@/db";
 import { ratingLabel } from "@/config/ratings";
 import { AccountActions } from "@/components/account-actions";
 import { EditableReportComment } from "@/components/editable-report-comment";
+import { parseDatabaseDate, type DatabaseDate } from "@/lib/database-date";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function DashboardPage() {
         id: string;
         rating: number;
         comment: string | null;
-        submitted_at: Date;
+        submitted_at: DatabaseDate;
         name: string;
         slug: string;
         editable: boolean;
@@ -75,7 +76,11 @@ export default async function DashboardPage() {
                     <Link href={`/campgrounds/${report.slug}`}>
                       <strong>{report.name}</strong>
                     </Link>
-                    <time>{report.submitted_at.toLocaleDateString()}</time>
+                    <time>
+                      {parseDatabaseDate(
+                        report.submitted_at,
+                      ).toLocaleDateString()}
+                    </time>
                   </header>
                   <p>{ratingLabel(report.rating)}</p>
                   <EditableReportComment

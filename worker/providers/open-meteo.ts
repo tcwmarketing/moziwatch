@@ -19,11 +19,21 @@ function mean(values: Array<number | null>) {
 }
 
 export class OpenMeteoProvider implements WeatherProvider {
-  readonly name = "open-meteo";
+  readonly name = "open-meteo-ecmwf";
+  private readonly endpoint: string;
+
   constructor(
-    private baseUrl: string,
+    baseUrl: string,
     private apiKey?: string,
-  ) {}
+  ) {
+    const url = new URL(baseUrl);
+    const path = url.pathname.replace(/\/$/, "");
+    // The generic forecast endpoint can select regional models that expose the
+    // requested soil-moisture field as an all-null series. The documented
+    // ECMWF endpoint provides a consistent global 0-7 cm soil layer.
+    url.pathname = /\/(?:ecmwf|forecast)$/.test(path) ? path : `${path}/ecmwf`;
+    this.endpoint = url.toString().replace(/\/$/, "");
+  }
 
   async fetchCurrentDay(
     cells: Array<{ key: string; latitude: number; longitude: number }>,
@@ -46,10 +56,9 @@ export class OpenMeteoProvider implements WeatherProvider {
       cell_selection: "land",
     });
     if (this.apiKey) params.set("apikey", this.apiKey);
-    const response = await fetch(
-      `${this.baseUrl.replace(/\/$/, "")}/forecast?${params}`,
-      { signal: AbortSignal.timeout(45_000) },
-    );
+    const response = await fetch(`${this.endpoint}?${params}`, {
+      signal: AbortSignal.timeout(45_000),
+    });
     if (!response.ok) throw new Error(`Open-Meteo returned ${response.status}`);
     const json = (await response.json()) as ApiPayload | ApiPayload[];
     const payloads = Array.isArray(json) ? json : [json];
@@ -93,7 +102,11 @@ export class OpenMeteoProvider implements WeatherProvider {
         longitude: cells[index].longitude,
         elevation: payload.elevation ?? null,
         variables,
-        raw: { ...payload, requestedDate: date },
+        raw: {
+          ...payload,
+          requestedDate: date,
+          sourceModel: "ECMWF IFS",
+        },
       };
     });
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sqlClient } from "@/db";
+import { parseDatabaseDate, type DatabaseDate } from "@/lib/database-date";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +10,8 @@ export async function GET() {
       {
         id: string;
         version: string;
-        forecast_date: Date;
-        generated_at: Date;
+        forecast_date: DatabaseDate;
+        generated_at: DatabaseDate;
         is_synthetic: boolean;
         model_status: string;
         uses_user_reports: string;
@@ -47,8 +48,8 @@ export async function GET() {
         modelStatus: runs[0].model_status,
         trainedFromUserReports: runs[0].uses_user_reports === "true",
         modelVersion: runs[0].version,
-        forecastDate: runs[0].forecast_date.toISOString(),
-        generatedAt: runs[0].generated_at.toISOString(),
+        forecastDate: parseDatabaseDate(runs[0].forecast_date).toISOString(),
+        generatedAt: parseDatabaseDate(runs[0].generated_at).toISOString(),
         demonstrationData: runs[0].is_synthetic,
         data: {
           type: "FeatureCollection",

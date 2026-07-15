@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/current-user";
 import { sqlClient } from "@/db";
 import { AdminConsole } from "@/components/admin-console";
 import { ModerationControls } from "@/components/moderation-controls";
+import { parseDatabaseDate, type DatabaseDate } from "@/lib/database-date";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function AdminPage() {
         name: string;
         rating: number;
         moderation_status: string;
-        submitted_at: Date;
+        submitted_at: DatabaseDate;
       }[]
     >`SELECT r.id, c.name, r.rating, r.moderation_status, r.submitted_at FROM reports r JOIN campgrounds c ON c.id = r.campground_id ORDER BY r.submitted_at DESC LIMIT 20`,
     sqlClient<
@@ -25,8 +26,8 @@ export default async function AdminPage() {
         id: string;
         version: string;
         status: string;
-        forecast_date: Date;
-        generated_at: Date | null;
+        forecast_date: DatabaseDate;
+        generated_at: DatabaseDate | null;
         error: string | null;
       }[]
     >`SELECT r.id, m.version, r.status, r.forecast_date, r.generated_at, r.error FROM forecast_runs r JOIN forecast_models m ON m.id = r.model_id ORDER BY r.created_at DESC LIMIT 10`,
@@ -69,7 +70,9 @@ export default async function AdminPage() {
                   reportId={report.id}
                   initialStatus={report.moderation_status}
                 />
-                <time>{report.submitted_at.toLocaleDateString()}</time>
+                <time>
+                  {parseDatabaseDate(report.submitted_at).toLocaleDateString()}
+                </time>
               </div>
             ))}
           </div>
@@ -82,7 +85,9 @@ export default async function AdminPage() {
                 <div key={run.id}>
                   <span>{run.version}</span>
                   <span>{run.status}</span>
-                  <time>{run.forecast_date.toLocaleDateString()}</time>
+                  <time>
+                    {parseDatabaseDate(run.forecast_date).toLocaleDateString()}
+                  </time>
                   <span>{run.error || "No errors"}</span>
                 </div>
               ))}

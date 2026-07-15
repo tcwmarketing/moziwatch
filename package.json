@@ -13,13 +13,13 @@
     "lint": "eslint . --ignore-pattern .next",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:integration": "tsx db/migrate-test.ts && vitest run tests/report-concurrency.integration.test.ts",
+    "test:integration": "node --env-file-if-exists=.env.local --import tsx db/migrate-test.ts && node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run tests/report-concurrency.integration.test.ts",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx db/migrate.ts",
-    "db:seed": "tsx db/seed.ts",
-    "forecast:run": "tsx worker/run-forecast.ts",
-    "forecast:scheduler": "tsx worker/scheduler.ts",
+    "db:migrate": "node --env-file-if-exists=.env.local --import tsx db/migrate.ts",
+    "db:seed": "node --env-file-if-exists=.env.local --import tsx db/seed.ts",
+    "forecast:run": "node --env-file-if-exists=.env.local --import tsx worker/run-forecast.ts",
+    "forecast:scheduler": "node --env-file-if-exists=.env.local --import tsx worker/scheduler.ts",
     "model:train": "tsx worker/train-model.ts"
   },
   "dependencies": {

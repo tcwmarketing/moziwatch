@@ -10,7 +10,7 @@ const serverSchema = z.object({
   OPEN_METEO_BASE_URL: z
     .string()
     .url()
-    .default("https://api.open-meteo.com/v1"),
+    .default("https://api.open-meteo.com/v1/ecmwf"),
   OPEN_METEO_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM: z.string().optional(),

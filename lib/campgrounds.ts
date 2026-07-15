@@ -1,5 +1,6 @@
 import { sqlClient } from "@/db";
 import { markerStateForAverage } from "@/config/ratings";
+import { parseDatabaseDate, type DatabaseDate } from "./database-date";
 
 export type RatingPeriod = "recent" | "historical";
 
@@ -20,7 +21,7 @@ type CampgroundRow = {
   recent_count: number;
   historical_average: number | null;
   historical_count: number;
-  most_recent_report_at: Date | null;
+  most_recent_report_at: DatabaseDate | null;
 };
 
 export async function listCampgrounds(period: RatingPeriod) {
@@ -54,7 +55,9 @@ export async function listCampgrounds(period: RatingPeriod) {
         severity_key: marker.key,
         severity_label: marker.label,
         marker_color: marker.color,
-        most_recent_report_at: row.most_recent_report_at?.toISOString() ?? null,
+        most_recent_report_at: row.most_recent_report_at
+          ? parseDatabaseDate(row.most_recent_report_at).toISOString()
+          : null,
       },
     };
   });
@@ -80,7 +83,7 @@ export async function getCampgroundReports(campgroundId: string) {
         id: string;
         rating: number;
         comment: string | null;
-        submitted_at: Date;
+        submitted_at: DatabaseDate;
         account_report: boolean;
       }[]
     >`
@@ -96,5 +99,11 @@ export async function getCampgroundReports(campgroundId: string) {
       GROUP BY rating ORDER BY rating
     `,
   ]);
-  return { reports, distribution };
+  return {
+    reports: reports.map((report) => ({
+      ...report,
+      submitted_at: parseDatabaseDate(report.submitted_at),
+    })),
+    distribution,
+  };
 }

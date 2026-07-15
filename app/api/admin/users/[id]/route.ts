@@ -3,6 +3,7 @@ import { z } from "zod";
 import { sqlClient } from "@/db";
 import { getApiAdmin } from "@/lib/api-admin";
 import { isSameOrigin } from "@/lib/privacy";
+import { toPostgresJson } from "@/lib/postgres-json";
 
 const input = z.object({ disabled: z.boolean() });
 export async function PATCH(
@@ -33,7 +34,7 @@ export async function PATCH(
     await tx`UPDATE "user" SET disabled_at = CASE WHEN ${parsed.data.disabled} THEN now() ELSE NULL END, updated_at = now() WHERE id = ${id}`;
     if (parsed.data.disabled)
       await tx`DELETE FROM session WHERE user_id = ${id}`;
-    await tx`INSERT INTO admin_audit_logs (actor_id, action, target_type, target_id, details) VALUES (${admin.user.id}, 'set_user_disabled', 'user', ${id}, ${tx.json({ disabled: parsed.data.disabled })})`;
+    await tx`INSERT INTO admin_audit_logs (actor_id, action, target_type, target_id, details) VALUES (${admin.user.id}, 'set_user_disabled', 'user', ${id}, ${toPostgresJson({ disabled: parsed.data.disabled })}::jsonb)`;
   });
   return NextResponse.json({ ok: true });
 }

@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import type postgres from "postgres";
 import type { ForecastFeature, ForecastModelArtifact } from "@/config/forecast";
 import { sqlClient } from "@/db";
+import { parseDatabaseDate, type DatabaseDate } from "@/lib/database-date";
+import { toPostgresJson } from "@/lib/postgres-json";
 import { createNorthAmericaGrid } from "./grid";
 import {
   assertFiniteFeatures,
@@ -28,12 +29,15 @@ if (model.kind === "weather-index-beta" && model.usesUserReports)
   throw new Error("The beta weather model must not use user reports");
 
 const weatherProvider = new OpenMeteoProvider(
-  process.env.OPEN_METEO_BASE_URL || "https://api.open-meteo.com/v1",
+  process.env.OPEN_METEO_BASE_URL || "https://api.open-meteo.com/v1/ecmwf",
   process.env.OPEN_METEO_API_KEY,
 );
 const environmentProvider = new UnavailableEnvironmentalProvider();
 const forecastDate = new Date();
 forecastDate.setUTCHours(0, 0, 0, 0);
+const forecastDateString = forecastDate.toISOString().slice(0, 10);
+const modelCreatedAt =
+  model.kind === "logistic-regression" ? model.trainedAt : model.createdAt;
 let runId: string | null = null;
 
 try {
@@ -41,13 +45,13 @@ try {
     await tx`UPDATE forecast_models SET active = false WHERE active = true AND version <> ${model.version}`;
     return tx<{ id: string }[]>`
       INSERT INTO forecast_models (version, model_kind, artifact, evaluation, model_created_at, active)
-      VALUES (${model.version}, ${model.kind}, ${tx.json(model as unknown as postgres.JSONValue)}, ${tx.json(model.kind === "logistic-regression" ? model.temporalHoldout : model.evaluation)}, ${new Date(model.kind === "logistic-regression" ? model.trainedAt : model.createdAt)}, true)
+      VALUES (${model.version}, ${model.kind}, ${toPostgresJson(model)}::jsonb, ${toPostgresJson(model.kind === "logistic-regression" ? model.temporalHoldout : model.evaluation)}::jsonb, ${modelCreatedAt}::timestamptz, true)
       ON CONFLICT (version) DO UPDATE SET artifact = excluded.artifact, evaluation = excluded.evaluation, active = true
       RETURNING id
     `;
   });
   const runRows = await sqlClient<{ id: string }[]>`
-    INSERT INTO forecast_runs (model_id, forecast_date, status) VALUES (${modelRows[0].id}::uuid, ${forecastDate}, 'running')
+    INSERT INTO forecast_runs (model_id, forecast_date, status) VALUES (${modelRows[0].id}::uuid, ${forecastDateString}::date, 'running')
     ON CONFLICT (model_id, forecast_date) DO UPDATE SET status = 'running', error = NULL RETURNING id
   `;
   runId = runRows[0].id;
@@ -58,7 +62,7 @@ try {
           latitude: number;
           longitude: number;
           rating: number;
-          submitted_at: Date;
+          submitted_at: DatabaseDate;
         }[]
       >`
     SELECT c.latitude, c.longitude, r.rating, r.submitted_at FROM reports r
@@ -70,7 +74,7 @@ try {
     const cells = grid.slice(offset, offset + 100);
     const weather = await weatherProvider.fetchCurrentDay(
       cells,
-      forecastDate.toISOString().slice(0, 10),
+      forecastDateString,
     );
     await sqlClient.begin(async (tx) => {
       for (let index = 0; index < cells.length; index++) {
@@ -94,7 +98,9 @@ try {
               Math.cos((cell.latitude * Math.PI) / 180)) **
               2;
           const ageDays =
-            (forecastDate.getTime() - report.submitted_at.getTime()) / 86400000;
+            (forecastDate.getTime() -
+              parseDatabaseDate(report.submitted_at).getTime()) /
+            86400000;
           return (
             sum +
             (Math.max(0, report.rating - 1) / 4) *
@@ -138,13 +144,13 @@ try {
         }
         assertFiniteFeatures(partial, requiredFeatures(model));
         const score = scoreForecast(model, partial);
-        await tx`INSERT INTO weather_observations (run_id, cell_key, latitude, longitude, observed_for, provider, variables, raw_payload) VALUES (${runId}::uuid, ${cell.key}, ${cell.latitude}, ${cell.longitude}, ${forecastDate}, ${weatherProvider.name}, ${tx.json(observation.variables)}, ${tx.json(observation.raw as postgres.JSONValue)}) ON CONFLICT (run_id, cell_key) DO UPDATE SET variables = excluded.variables, raw_payload = excluded.raw_payload`;
-        await tx`INSERT INTO forecast_cells (run_id, cell_key, latitude, longitude, score, cell_geojson, features) VALUES (${runId}::uuid, ${cell.key}, ${cell.latitude}, ${cell.longitude}, ${score}, ${tx.json(cell.geojson)}, ${tx.json(partial)}) ON CONFLICT (run_id, cell_key) DO UPDATE SET score = excluded.score, features = excluded.features`;
+        await tx`INSERT INTO weather_observations (run_id, cell_key, latitude, longitude, observed_for, provider, variables, raw_payload) VALUES (${runId}::uuid, ${cell.key}, ${cell.latitude}, ${cell.longitude}, ${forecastDateString}::date, ${weatherProvider.name}, ${toPostgresJson(observation.variables)}::jsonb, ${toPostgresJson(observation.raw)}::jsonb) ON CONFLICT (run_id, cell_key) DO UPDATE SET variables = excluded.variables, raw_payload = excluded.raw_payload`;
+        await tx`INSERT INTO forecast_cells (run_id, cell_key, latitude, longitude, score, cell_geojson, features) VALUES (${runId}::uuid, ${cell.key}, ${cell.latitude}, ${cell.longitude}, ${score}, ${toPostgresJson(cell.geojson)}::jsonb, ${toPostgresJson(partial)}::jsonb) ON CONFLICT (run_id, cell_key) DO UPDATE SET score = excluded.score, features = excluded.features`;
       }
     });
   }
   await sqlClient`UPDATE forecast_runs SET status = 'published', generated_at = now() WHERE id = ${runId}::uuid`;
-  await sqlClient`INSERT INTO forecast_job_logs (run_id, level, message, details) VALUES (${runId}::uuid, 'info', 'Forecast published', ${sqlClient.json({ modelVersion: model.version, provider: weatherProvider.name })})`;
+  await sqlClient`INSERT INTO forecast_job_logs (run_id, level, message, details) VALUES (${runId}::uuid, 'info', 'Forecast published', ${toPostgresJson({ modelVersion: model.version, provider: weatherProvider.name })}::jsonb)`;
   console.log(`Published forecast ${runId} with model ${model.version}`);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);

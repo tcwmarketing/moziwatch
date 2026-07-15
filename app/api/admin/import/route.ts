@@ -3,6 +3,7 @@ import { sqlClient } from "@/db";
 import { getApiAdmin } from "@/lib/api-admin";
 import { flagLikelyDuplicates, parseCampgroundCsv } from "@/lib/csv-import";
 import { isSameOrigin } from "@/lib/privacy";
+import { toPostgresJson } from "@/lib/postgres-json";
 import { campgroundInput } from "@/lib/validation";
 
 export async function POST(request: Request) {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       { id: string; name: string; latitude: number; longitude: number }[]
     >`SELECT id, name, latitude, longitude FROM campgrounds`;
     const valid = flagLikelyDuplicates(parsed.valid, existing);
-    await sqlClient`INSERT INTO campground_imports (actor_id, filename, summary, rows) VALUES (${admin.user.id}, ${String(body.filename || "import.csv")}, ${sqlClient.json({ total: parsed.total, errors: parsed.errors.length })}, ${sqlClient.json(valid)})`;
+    await sqlClient`INSERT INTO campground_imports (actor_id, filename, summary, rows) VALUES (${admin.user.id}, ${String(body.filename || "import.csv")}, ${toPostgresJson({ total: parsed.total, errors: parsed.errors.length })}::jsonb, ${toPostgresJson(valid)}::jsonb)`;
     return NextResponse.json({ ...parsed, valid });
   }
   if (body?.action === "commit" && Array.isArray(body.rows)) {
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
         `;
         count += result.count;
       }
-      await tx`INSERT INTO admin_audit_logs (actor_id, action, target_type, details) VALUES (${admin.user.id}, 'campground_csv_import', 'campground', ${tx.json({ inserted: count, filename: body.filename })})`;
+      await tx`INSERT INTO admin_audit_logs (actor_id, action, target_type, details) VALUES (${admin.user.id}, 'campground_csv_import', 'campground', ${toPostgresJson({ inserted: count, filename: body.filename })}::jsonb)`;
       return count;
     });
     return NextResponse.json({ inserted });

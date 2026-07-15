@@ -1,7 +1,9 @@
-import "server-only";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+
+if (typeof window !== "undefined")
+  throw new Error("The database client can only be used on the server");
 
 const globalForDb = globalThis as unknown as {
   postgresClient?: ReturnType<typeof postgres>;
