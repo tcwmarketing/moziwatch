@@ -1,0 +1,8 @@
+RewriteEngine On
+DirectoryIndex disabled
+
+# Keep ACME validation local to Apache so SSL renewals do not depend on Node.
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+
+# MoziWatch listens only on the VPS loopback interface.
+RewriteRule ^(.*)$ http://127.0.0.1:4288/$1 [P,L]
