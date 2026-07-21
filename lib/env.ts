@@ -10,10 +10,15 @@ const serverSchema = z.object({
   OPEN_METEO_BASE_URL: z
     .string()
     .url()
-    .default("https://api.open-meteo.com/v1/ecmwf"),
+    .default("https://api.open-meteo.com/v1/forecast"),
   OPEN_METEO_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM: z.string().optional(),
+  CONTACT_RECIPIENT_EMAIL: z.string().email().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_MODE: z.enum(["test", "live"]).default("test"),
+  STRIPE_DONATION_CURRENCY: z.string().length(3).default("cad"),
   FORECAST_MODEL_PATH: z.string().default("./config/models/current.json"),
 });
 
@@ -26,7 +31,7 @@ export function getServerEnv() {
 }
 
 export const publicEnv = {
-  appName: process.env.NEXT_PUBLIC_APP_NAME || "Camp Signal",
+  appName: process.env.NEXT_PUBLIC_APP_NAME || "MoziWatch",
   appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   basemapMode: process.env.NEXT_PUBLIC_BASEMAP_MODE || "hosted",
   protomapsStyleUrl:

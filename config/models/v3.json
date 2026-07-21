@@ -1,0 +1,118 @@
+{
+  "kind": "campground-weather-habitat-report-index",
+  "status": "experimental",
+  "version": "mosquito-campground-v3",
+  "configVersion": "mosquito-campground-v3-config-1",
+  "createdAt": "2026-07-15T00:00:00.000Z",
+  "usesRecentUserReports": true,
+  "usesHistoricalUserReports": true,
+  "usesWeatherHistory": true,
+  "usesGeographicHabitat": true,
+  "habitat": {
+    "ringWeights": {
+      "within250m": 0.58,
+      "from250mTo1km": 0.29,
+      "from1kmTo3km": 0.13
+    },
+    "weights": {
+      "wetlands": 0.15,
+      "marshes": 0.18,
+      "seasonalWater": 0.14,
+      "smallWaterBodies": 0.11,
+      "stagnantWater": 0.13,
+      "shorelineEdge": 0.07,
+      "slowRiver": 0.035,
+      "fastRiver": 0.005,
+      "forestVegetation": 0.055,
+      "poorDrainage": 0.035,
+      "landCover": 0.025,
+      "floodplain": 0.025,
+      "largeOpenWater": 0.005
+    }
+  },
+  "waterBalance": {
+    "rainGainPerMm": 0.025,
+    "snowmeltGainPerMm": 0.03,
+    "evapotranspirationLossPerMm": 0.015,
+    "dailyDryLoss": 0.01,
+    "drainageLoss": 0.025,
+    "slopeLossPerDegree": 0.001,
+    "wetHabitatPersistence": 0.55,
+    "baseCapacity": 0.35,
+    "wetHabitatCapacity": 0.65,
+    "flushingThresholdMm": 55,
+    "flushingPenalty": 0.08
+  },
+  "breeding": {
+    "waterBalanceWeight": 0.55,
+    "rainFrequencyWeight": 0.15,
+    "soilMoistureWeight": 0.2,
+    "rainfallLagWeight": 0.1,
+    "soilMoistureDry": 0.07,
+    "soilMoistureWet": 0.36
+  },
+  "population": {
+    "developmentBaseC": 10,
+    "developmentOptimalC": 25,
+    "extremeHeatC": 35,
+    "freezeC": 0,
+    "degreeDayTarget": 180,
+    "minimumOvernightC": 6,
+    "idealDayLengthHours": 15,
+    "snowmeltActivationWeight": 0.12
+  },
+  "activity": {
+    "minimumTemperatureC": 5,
+    "optimalTemperatureC": 24,
+    "maximumTemperatureC": 38,
+    "humidityFloorPercent": 35,
+    "humidityCeilingPercent": 85,
+    "windSuppressionStartsKmh": 8,
+    "windStrongKmh": 25,
+    "gustSuppressionStartsKmh": 20,
+    "gustStrongKmh": 45,
+    "rainSuppressionStartsMm": 0.5,
+    "heavyRainMm": 4,
+    "daylightMultiplier": 0.65,
+    "twilightWindowHours": 2
+  },
+  "reports": {
+    "recentDays": 30,
+    "recency": [
+      { "maximumAgeDays": 1, "multiplier": 1.0 },
+      { "maximumAgeDays": 3, "multiplier": 0.85 },
+      { "maximumAgeDays": 7, "multiplier": 0.6 },
+      { "maximumAgeDays": 14, "multiplier": 0.35 },
+      { "maximumAgeDays": 30, "multiplier": 0.15 }
+    ],
+    "verifiedMultiplier": 1.0,
+    "anonymousMultiplier": 0.7,
+    "missingObservationTimeMultiplier": 0.85,
+    "recentConfidenceScale": 3,
+    "seasonalWindowDays": 21,
+    "historicalAnnualDecay": 0.85,
+    "historicalConfidenceScale": 10,
+    "historicalYearScale": 2,
+    "historicalMinimumReports": 3,
+    "historicalMinimumYears": 2
+  },
+  "blending": {
+    "recentMaximum": [0.5, 0.35, 0.2],
+    "historicalMaximum": 0.25,
+    "environmentalMinimum": [0.25, 0.4, 0.55]
+  },
+  "confidence": {
+    "weatherCompletenessWeight": 0.35,
+    "habitatCompletenessWeight": 0.3,
+    "evidenceAgreementWeight": 0.35,
+    "horizonPenaltyPerDay": 0.045
+  },
+  "levels": [
+    { "maximum": 15, "level": 1, "label": "None or minimal" },
+    { "maximum": 35, "level": 2, "label": "Light" },
+    { "maximum": 55, "level": 3, "label": "Moderate" },
+    { "maximum": 75, "level": 4, "label": "Heavy" },
+    { "maximum": 100, "level": 5, "label": "Severe" }
+  ],
+  "notes": "Experimental transparent index. Not machine learning, not a probability, and not a species or disease model. Thresholds are provisional."
+}

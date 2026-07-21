@@ -6,7 +6,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = publicEnv.appUrl.replace(/\/$/, "");
   const staticPages: MetadataRoute.Sitemap = [
     "",
+    "/campgrounds",
+    "/products",
+    "/support",
     "/about",
+    "/contact",
+    "/data-sources",
     "/privacy",
     "/terms",
   ].map((path) => ({

@@ -8,11 +8,13 @@ export function CampgroundMiniMap({
   longitude,
   styleUrl,
   apiKey,
+  markerColor,
 }: {
   latitude: number;
   longitude: number;
   styleUrl: string;
   apiKey: string;
+  markerColor: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -45,7 +47,7 @@ export function CampgroundMiniMap({
           source: "campground-location",
           paint: {
             "circle-radius": 9,
-            "circle-color": "#173f35",
+            "circle-color": markerColor,
             "circle-stroke-color": "#fff",
             "circle-stroke-width": 3,
           },
@@ -57,7 +59,7 @@ export function CampgroundMiniMap({
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [apiKey, latitude, longitude, styleUrl]);
+  }, [apiKey, latitude, longitude, markerColor, styleUrl]);
   return (
     <div className="mini-map" ref={container}>
       {!apiKey ? (

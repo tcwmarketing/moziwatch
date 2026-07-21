@@ -1,0 +1,106 @@
+name: North America habitat backfill
+
+on:
+  schedule:
+    # Static profiles change slowly. A weekly bounded repair pass is sufficient
+    # after the initial North American backfill has completed.
+    - cron: "30 2 * * 0"
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Habitat tier to process
+        type: choice
+        options:
+          - both
+          - major-detailed
+          - minor-simplified
+        default: both
+      limit:
+        description: Optional per-tier batch size override
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: north-america-habitat
+  cancel-in-progress: false
+
+jobs:
+  process:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile_tier: major-detailed
+            default_limit: "25"
+          - profile_tier: minor-simplified
+            default_limit: "250"
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Check database configuration
+        if: >-
+          github.event_name == 'schedule' ||
+          inputs.tier == 'both' ||
+          inputs.tier == matrix.profile_tier
+        id: config
+        shell: bash
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::Add the DATABASE_URL repository secret to enable habitat publication."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v4
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .cache/habitat/http
+          key: habitat-${{ matrix.profile_tier }}-${{ runner.os }}
+          restore-keys: habitat-
+      - if: steps.config.outputs.configured == 'true'
+        run: npm ci
+      - if: steps.config.outputs.configured == 'true'
+        run: python -m pip install -r requirements-habitat.txt
+      - if: steps.config.outputs.configured == 'true'
+        id: habitat
+        shell: bash
+        env:
+          PROFILE_TIER: ${{ matrix.profile_tier }}
+          DEFAULT_LIMIT: ${{ matrix.default_limit }}
+          LIMIT_OVERRIDE: ${{ inputs.limit || '' }}
+        run: |
+          limit="${LIMIT_OVERRIDE:-$DEFAULT_LIMIT}"
+          input="data/habitat/${PROFILE_TIER}-campgrounds.json"
+          output="data/habitat/batches/${PROFILE_TIER}.json"
+          if [ "$PROFILE_TIER" = "major-detailed" ]; then
+            npm run habitat:export-major -- "$input"
+            args=(--input "$input" --output "$output")
+          else
+            npm run habitat:export-minor -- "$input"
+            args=(--minor-fast --input "$input" --output "$output")
+          fi
+          python worker/habitat/process-north-america.py "${args[@]}" --only-version-missing --limit "$limit" --allow-empty
+          count=$(python -c "import json; print(len(json.load(open('$output'))['profiles']))")
+          echo "profile_count=$count" >> "$GITHUB_OUTPUT"
+          echo "output=$output" >> "$GITHUB_OUTPUT"
+      - if: steps.config.outputs.configured == 'true' && steps.habitat.outputs.profile_count != '0'
+        run: npm run habitat:publish -- "${{ steps.habitat.outputs.output }}"
+      - if: steps.config.outputs.configured == 'true'
+        run: npm run habitat:verify

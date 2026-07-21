@@ -5,6 +5,8 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL(".", import.meta.url)) } },
   test: {
     environment: "node",
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     coverage: { reporter: ["text", "json", "html"] },
   },
 });

@@ -1,0 +1,27 @@
+{
+  "kind": "campground-monthly-climatology-seasonal-beta",
+  "status": "beta",
+  "version": "campground-monthly-beta-v1.0.0",
+  "createdAt": "2026-07-15T00:00:00.000Z",
+  "usesUserReports": false,
+  "evaluation": {
+    "method": "expert-configured-not-trained",
+    "auc": null,
+    "brier": null
+  },
+  "componentWeights": {
+    "habitat": 0.5,
+    "season": 0.35,
+    "rainfallClimate": 0.15
+  },
+  "anomalyAdjustments": {
+    "temperaturePerC": 0.035,
+    "precipitationScaleMm": 45,
+    "precipitationMaximum": 0.12
+  },
+  "confidence": {
+    "regionalResolutionFactor": 0.78,
+    "monthlyHorizonPenalty": 0.055
+  },
+  "notes": "Beta monthly mosquito outlook combining the campground habitat and long-term rainfall baseline with coarse Open-Meteo ECMWF seasonal ensemble guidance. Expert-configured and not trained from camper reports. Monthly guidance is not a date-specific weather forecast."
+}

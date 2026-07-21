@@ -13,6 +13,10 @@ export function ReportForm({
 }) {
   const [rating, setRating] = useState<RatingValue | null>(null);
   const [comment, setComment] = useState("");
+  const [observationMode, setObservationMode] = useState<"recent" | "older">(
+    "recent",
+  );
+  const [observedOn, setObservedOn] = useState("");
   const [state, setState] = useState<{
     kind: "idle" | "saving" | "success" | "error";
     message?: string;
@@ -29,7 +33,13 @@ export function ReportForm({
     const response = await fetch("/api/reports", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ campgroundId, rating, comment }),
+      body: JSON.stringify({
+        campgroundId,
+        rating,
+        comment,
+        observationMode,
+        observedOn: observationMode === "older" ? observedOn : undefined,
+      }),
     });
     const result = (await response.json()) as { error?: string };
     if (!response.ok)
@@ -42,6 +52,8 @@ export function ReportForm({
       message: "Thanks. Your campground report is now included.",
     });
     setComment("");
+    setObservationMode("recent");
+    setObservedOn("");
   }
 
   return (
@@ -50,6 +62,55 @@ export function ReportForm({
       onSubmit={submit}
     >
       <RatingPicker value={rating} onChange={setRating} />
+      <fieldset className="report-date-fieldset">
+        <legend>When did you observe this?</legend>
+        <label>
+          <input
+            type="radio"
+            name={`observation-mode-${campgroundId}`}
+            value="recent"
+            checked={observationMode === "recent"}
+            onChange={() => setObservationMode("recent")}
+          />
+          <span>
+            <strong>Recent</strong>
+            <small>
+              Choose this whenever the experience still feels recent to you. It
+              will be recorded as today.
+            </small>
+          </span>
+        </label>
+        <label>
+          <input
+            type="radio"
+            name={`observation-mode-${campgroundId}`}
+            value="older"
+            checked={observationMode === "older"}
+            onChange={() => setObservationMode("older")}
+          />
+          <span>
+            <strong>Older date</strong>
+            <small>Use the date the campground conditions were observed.</small>
+          </span>
+        </label>
+        {observationMode === "older" ? (
+          <label
+            className="older-report-date"
+            htmlFor={`observed-on-${campgroundId}`}
+          >
+            Observation date
+            <input
+              id={`observed-on-${campgroundId}`}
+              type="date"
+              min="2000-01-01"
+              max={new Date().toISOString().slice(0, 10)}
+              value={observedOn}
+              onChange={(event) => setObservedOn(event.target.value)}
+              required
+            />
+          </label>
+        ) : null}
+      </fieldset>
       <label className="field-label" htmlFor={`comment-${campgroundId}`}>
         Optional note
       </label>

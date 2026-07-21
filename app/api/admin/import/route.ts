@@ -5,6 +5,7 @@ import { flagLikelyDuplicates, parseCampgroundCsv } from "@/lib/csv-import";
 import { isSameOrigin } from "@/lib/privacy";
 import { toPostgresJson } from "@/lib/postgres-json";
 import { campgroundInput } from "@/lib/validation";
+import { normalizeName } from "@/worker/locations/types";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request))
@@ -31,8 +32,8 @@ export async function POST(request: Request) {
       let count = 0;
       for (const row of rows) {
         const result = await tx`
-          INSERT INTO campgrounds (name, slug, address, city, region, country, postal_code, latitude, longitude, website, description, data_source, data_license)
-          VALUES (${row.name}, ${row.slug}, ${row.address}, ${row.city}, ${row.region}, ${row.country}, ${row.postalCode}, ${row.latitude}, ${row.longitude}, ${row.website || null}, ${row.description || null}, 'administrator-csv', 'administrator-supplied')
+          INSERT INTO campgrounds (name, normalized_name, slug, address, city, region, country, postal_code, latitude, longitude, website, data_source)
+          VALUES (${row.name}, ${normalizeName(row.name)}, ${row.slug}, ${row.address}, ${row.city}, ${row.region}, ${row.country}, ${row.postalCode}, ${row.latitude}, ${row.longitude}, ${row.website || null}, 'administrator-csv')
           ON CONFLICT (slug) DO NOTHING RETURNING id
         `;
         count += result.count;

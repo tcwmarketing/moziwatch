@@ -1,3 +1,12 @@
+import type { Metadata } from "next";
+import { absoluteUrl } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Privacy policy",
+  description: "How MoziWatch protects campground report and account data.",
+  alternates: { canonical: absoluteUrl("/privacy") },
+};
+
 export default function PrivacyPage() {
   return (
     <div className="content-page prose-page">
@@ -8,17 +17,17 @@ export default function PrivacyPage() {
         <p>
           We place a random first-party reporter token in a secure, HTTP-only
           browser cookie. It is not a fingerprint and does not track you across
-          sites. We store only a protected HMAC of that token.
+          sites. We store only a protected, one-way version of that token.
         </p>
       </section>
       <section>
         <h2>IP addresses</h2>
         <p>
           Your network address is normalized on the server and immediately
-          protected with a keyed HMAC. We do not store the raw address. The
-          protected value is used for duplicate prevention and general abuse
-          limits. Trusted proxy headers are used only when the operator
-          configures an exact proxy count.
+          converted into a protected one-way value. We do not store the raw
+          address. The protected value is used for duplicate prevention and
+          general abuse limits. Trusted proxy headers are used only when the
+          operator configures an exact proxy count.
         </p>
       </section>
       <section>
@@ -28,6 +37,16 @@ export default function PrivacyPage() {
           campgrounds, and reports. Email accounts must be verified. Google and
           Facebook are asked only for name and email. If a provider does not
           confirm the email, we require our own verification.
+        </p>
+      </section>
+      <section>
+        <h2>Donations</h2>
+        <p>
+          Donations are processed by Stripe on its hosted checkout page. We
+          retain the donation amount, currency, payment status, Stripe checkout
+          identifiers, and the donor email returned with a completed payment. We
+          do not receive or store your full payment-card details. Stripe
+          processes payment information under its own privacy policy.
         </p>
       </section>
       <section>

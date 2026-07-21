@@ -1,4 +1,5 @@
 import { sqlClient } from "./index";
+import { normalizeName } from "../worker/locations/types";
 
 const developmentCampgrounds = [
   [
@@ -71,9 +72,9 @@ const developmentCampgrounds = [
 
 for (const campground of developmentCampgrounds) {
   await sqlClient`
-    INSERT INTO campgrounds (name, slug, address, city, region, country, postal_code, latitude, longitude, description, data_source, data_license)
-    VALUES (${campground[0]}, ${campground[1]}, ${campground[2]}, ${campground[3]}, ${campground[4]}, ${campground[5]}, ${campground[6]}, ${campground[7]}, ${campground[8]},
-            'Fictional campground record for local development only.', 'fictional-development-seed', 'development-only')
+    INSERT INTO campgrounds (name, normalized_name, slug, address, city, region, country, postal_code, latitude, longitude, data_source)
+    VALUES (${campground[0]}, ${normalizeName(campground[0])}, ${campground[1]}, ${campground[2]}, ${campground[3]}, ${campground[4]}, ${campground[5]}, ${campground[6]}, ${campground[7]}, ${campground[8]},
+            'fictional-development-seed')
     ON CONFLICT (slug) DO NOTHING
   `;
 }

@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/.pnpm-store/
+/.venv-habitat/
 /.pnp
 .pnp.*
 .yarn/*
@@ -21,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+__pycache__/
+*.py[cod]
 
 # debug
 npm-debug.log*
@@ -42,3 +46,14 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+/.tools/
+/.cache/
+/.cache_wms.xml
+/data/habitat/north-america-campgrounds.json
+/data/habitat/major-campgrounds-detailed.json
+/data/habitat/minor-campgrounds.json
+/data/habitat/major-detailed-campgrounds.json
+/data/habitat/minor-simplified-campgrounds.json
+/data/habitat/bear-creek-park-gis-v1.json
+/data/habitat/batches/
+/data/locations/geonames/

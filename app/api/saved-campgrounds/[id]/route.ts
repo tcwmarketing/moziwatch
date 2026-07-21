@@ -28,12 +28,30 @@ export async function POST(
       { error: result.error },
       { status: result.status },
     );
-  await sqlClient`
+  const rows = await sqlClient<{ saved: boolean }[]>`
     INSERT INTO saved_campgrounds (account_id, campground_id)
     SELECT ${result.userId}, id FROM campgrounds WHERE id = ${result.campgroundId}::uuid AND active = true
     ON CONFLICT DO NOTHING
+    RETURNING true AS saved
   `;
-  return NextResponse.json({ saved: true });
+  if (!rows.length) {
+    const existing = await sqlClient<{ saved: boolean }[]>`
+      SELECT EXISTS(
+        SELECT 1 FROM saved_campgrounds
+        WHERE account_id = ${result.userId}
+          AND campground_id = ${result.campgroundId}::uuid
+      ) AS saved
+    `;
+    if (!existing[0]?.saved)
+      return NextResponse.json(
+        { error: "Campground not found." },
+        { status: 404 },
+      );
+  }
+  return NextResponse.json(
+    { saved: true },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function DELETE(
@@ -50,5 +68,8 @@ export async function DELETE(
     DELETE FROM saved_campgrounds
     WHERE account_id = ${result.userId} AND campground_id = ${result.campgroundId}::uuid
   `;
-  return NextResponse.json({ saved: false });
+  return NextResponse.json(
+    { saved: false },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

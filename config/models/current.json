@@ -1,35 +1,47 @@
 {
-  "kind": "weather-index-beta",
+  "kind": "campground-habitat-weather-beta",
   "status": "beta",
-  "version": "mosquito-weather-beta-v1",
-  "createdAt": "2026-07-14T00:00:00.000Z",
+  "version": "mosquito-campground-beta-v2",
+  "createdAt": "2026-07-15T00:00:00.000Z",
   "usesUserReports": false,
   "evaluation": {
-    "method": "expert-configured-not-trained",
+    "method": "expert-configured-prototype-not-trained",
     "auc": null,
     "brier": null
   },
-  "weights": {
-    "temperature": 0.28,
-    "humidity": 0.18,
-    "dewPoint": 0.14,
-    "recentRain": 0.18,
-    "soilMoisture": 0.14,
-    "lowWind": 0.08
+  "componentWeights": { "habitat": 0.44, "weather": 0.56 },
+  "habitatWeights": {
+    "wetlands": 0.16,
+    "marshes": 0.18,
+    "seasonalWater": 0.13,
+    "smallWaterBodies": 0.12,
+    "stagnantWater": 0.13,
+    "lakeShoreline": 0.04,
+    "largeOpenWater": 0.01,
+    "fastRiver": 0.01,
+    "slowRiver": 0.03,
+    "forestVegetation": 0.08,
+    "drainage": 0.04,
+    "rainfallClimate": 0.04,
+    "landCover": 0.03
+  },
+  "weatherWeights": {
+    "temperature": 0.19,
+    "overnightLow": 0.11,
+    "humidity": 0.13,
+    "dewPoint": 0.09,
+    "rainfallLag": 0.18,
+    "soilMoisture": 0.12,
+    "season": 0.1,
+    "evening": 0.08
   },
   "parameters": {
-    "temperatureOptimalC": 26,
+    "temperatureOptimalC": 25,
     "temperatureSpreadC": 9,
-    "humidityFloorPercent": 35,
-    "humidityCeilingPercent": 90,
-    "dewPointFloorC": 5,
-    "dewPointCeilingC": 20,
-    "precipitationScaleMm": 30,
-    "soilMoistureDry": 0.08,
-    "soilMoistureWet": 0.35,
-    "windCalmKmh": 2,
-    "windStrongKmh": 25,
-    "coldCutoffC": 5
+    "coldCutoffC": 5,
+    "windSuppressionStartsKmh": 12,
+    "windStrongKmh": 32,
+    "activeRainSuppressionMm": 4
   },
-  "notes": "Beta weather-suitability index configured from general mosquito ecology expectations. It has not been trained or validated using Camp Signal user reports. Replace it with a reviewed trained artifact after sufficient representative observations are available."
+  "notes": "Beta campground suitability model combining independently versioned habitat profiles with daily Open-Meteo weather. Expert-configured prototype; not trained from camper reports. Report ratings are never model inputs. Replace after sufficient representative, reviewed report data is available."
 }

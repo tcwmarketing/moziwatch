@@ -7,7 +7,7 @@ import { toPostgresJson } from "@/lib/postgres-json";
 import { recalculateCampgroundAggregates } from "@/lib/reports";
 
 const input = z.object({
-  status: z.enum(["published", "hidden", "rejected", "deleted"]),
+  status: z.enum(["published", "spam", "hidden", "rejected", "deleted"]),
 });
 
 export async function PATCH(

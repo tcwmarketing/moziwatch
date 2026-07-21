@@ -1,6 +1,6 @@
 export type AggregationReport = {
   rating: number;
-  submittedAt: Date;
+  observedAt: Date;
   moderationStatus: "pending" | "published" | "hidden" | "rejected" | "deleted";
   deletedAt?: Date | null;
 };
@@ -20,7 +20,7 @@ export function aggregateReports(
   );
   const boundary = now.getTime() - 30 * 24 * 60 * 60 * 1000;
   const recent = valid.filter(
-    (report) => report.submittedAt.getTime() >= boundary,
+    (report) => report.observedAt.getTime() >= boundary,
   );
   return {
     recentAverage: mean(recent.map((report) => report.rating)),
@@ -29,7 +29,7 @@ export function aggregateReports(
     historicalCount: valid.length,
     mostRecentReportAt: valid.length
       ? new Date(
-          Math.max(...valid.map((report) => report.submittedAt.getTime())),
+          Math.max(...valid.map((report) => report.observedAt.getTime())),
         )
       : null,
   };

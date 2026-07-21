@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import "@fontsource-variable/montserrat";
 import "./globals.css";
 import { publicEnv } from "@/lib/env";
 import { SiteHeader } from "@/components/site-header";
+import { absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.appUrl),
@@ -12,18 +14,37 @@ export const metadata: Metadata = {
   },
   description:
     "Find and share current mosquito conditions at campgrounds across Canada and the United States.",
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  applicationName: publicEnv.appName,
+  authors: [{ name: "MoziWatch", url: absoluteUrl() }],
+  creator: "MoziWatch",
+  publisher: "MoziWatch",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  icons: {
+    icon: [{ url: "/moziwatch-logo-tbg.png", type: "image/png" }],
+    shortcut: "/moziwatch-logo-tbg.png",
+    apple: [{ url: "/moziwatch-logo-tbg.png", type: "image/png" }],
+  },
   openGraph: {
     title: publicEnv.appName,
     description:
-      "Camper reports and an experimental mosquito forecast, clearly separated.",
+      "Recent camper reports and approximate mosquito outlooks, clearly separated.",
     type: "website",
     images: [
       {
         url: "/og.png",
-        width: 1200,
-        height: 630,
-        alt: "Camp Signal — Know before the mosquitoes do.",
+        width: 1728,
+        height: 900,
+        alt: "MoziWatch — campground mosquito reports and forecasts.",
       },
     ],
   },
@@ -31,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: publicEnv.appName,
     description:
-      "Camper reports and an experimental mosquito forecast, clearly separated.",
+      "Recent camper reports and approximate mosquito outlooks, clearly separated.",
     images: ["/og.png"],
   },
 };
@@ -45,21 +66,35 @@ export default function RootLayout({
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
+        <div className="support-bar">
+          <span>Love this idea? Support the venture with a donation.</span>
+          <Link href="/support">Donate</Link>
+        </div>
         <SiteHeader appName={publicEnv.appName} />
         <main id="main-content">{children}</main>
         <footer className="site-footer">
           <div>
             <strong>{publicEnv.appName}</strong>
-            <p>Built for clearer nights outside.</p>
+            <p>
+              Campground mosquito reports that help you pack for the conditions.
+            </p>
           </div>
           <nav aria-label="Footer navigation">
-            <Link href="/about">How it works</Link>
+            <Link href="/campgrounds">Campgrounds</Link>
+            <Link href="/products">Suggested products</Link>
+            <Link href="/support">Support us</Link>
+            <Link href="/contact">Contact us</Link>
+            <Link href="/data-sources">Data sources</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
           </nav>
           <p>
             Basemap by Protomaps and OpenStreetMap contributors. Forecast
             weather by Open-Meteo.
+          </p>
+          <p className="footer-affiliate-disclosure">
+            FTC disclosure: MoziWatch may earn a commission from product links.
+            As an Amazon Associate, MoziWatch earns from qualifying purchases.
           </p>
         </footer>
       </body>

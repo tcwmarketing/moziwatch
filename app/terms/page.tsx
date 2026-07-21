@@ -1,3 +1,12 @@
+import type { Metadata } from "next";
+import { absoluteUrl } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Terms of use",
+  description: "Terms for using MoziWatch campground reports and outlooks.",
+  alternates: { canonical: absoluteUrl("/terms") },
+};
+
 export default function TermsPage() {
   return (
     <div className="content-page prose-page">
@@ -6,7 +15,7 @@ export default function TermsPage() {
       <section>
         <h2>No safety guarantee</h2>
         <p>
-          Camper reports are subjective and the experimental forecast can be
+          Camper reports are subjective and the approximate outlook can be
           incomplete or wrong. Conditions change quickly. This service is not
           medical, health, or emergency advice.
         </p>
@@ -27,6 +36,15 @@ export default function TermsPage() {
           to their source licences and attribution requirements. You may not
           attempt to bypass rate limits, duplicate controls, or access
           restrictions.
+        </p>
+      </section>
+      <section>
+        <h2>Donations and product links</h2>
+        <p>
+          Donations are voluntary and do not purchase a subscription or affect
+          access to campground information. Some product links are affiliate
+          links. We may earn a commission from qualifying purchases without
+          increasing the price you pay.
         </p>
       </section>
       <section>

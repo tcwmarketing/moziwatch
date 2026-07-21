@@ -2,6 +2,8 @@ import { sqlClient } from "@/db";
 import type postgres from "postgres";
 import type { ReporterIdentity } from "./report-policy";
 import { parseDatabaseDate, type DatabaseDate } from "./database-date";
+import { reviewSubmissionContent } from "./spam-review";
+import { toPostgresJson } from "./postgres-json";
 
 export class DuplicateReportError extends Error {
   constructor(public retryAt: Date) {
@@ -21,12 +23,15 @@ type CreateReport = ReporterIdentity & {
   campgroundId: string;
   rating: number;
   comment: string | null;
+  observedOn: string;
   now?: Date;
 };
 
 export async function createReport(input: CreateReport) {
   const now = input.now ?? new Date();
   const nowIso = now.toISOString();
+  const contentReview = reviewSubmissionContent(input.comment || "");
+  const moderationStatus = contentReview.isSpam ? "spam" : "published";
   const lockKeys = [
     input.accountId ? `account:${input.accountId}` : null,
     input.anonymousTokenHash ? `anonymous:${input.anonymousTokenHash}` : null,
@@ -68,14 +73,23 @@ export async function createReport(input: CreateReport) {
     }
 
     const inserted = await tx<{ id: string }[]>`
-      INSERT INTO reports (campground_id, rating, comment, account_id, anonymous_token_hash, ip_hash, submitted_at)
+      INSERT INTO reports (
+        campground_id, rating, comment, account_id, anonymous_token_hash,
+        ip_hash, submitted_at, observed_on, moderation_status, spam_reasons
+      )
       VALUES (${input.campgroundId}::uuid, ${input.rating}, ${input.comment}, ${input.accountId},
-              ${input.anonymousTokenHash}, ${input.ipHash}, ${nowIso}::timestamptz)
+              ${input.anonymousTokenHash}, ${input.ipHash}, ${nowIso}::timestamptz,
+              ${input.observedOn}::date, ${moderationStatus},
+              ${toPostgresJson(contentReview.reasons)}::jsonb)
       RETURNING id
     `;
 
     await recalculateCampgroundAggregates(tx, input.campgroundId, now);
-    return { id: inserted[0].id, submittedAt: now };
+    return {
+      id: inserted[0].id,
+      submittedAt: now,
+      observedOn: input.observedOn,
+    };
   });
 }
 
@@ -92,11 +106,11 @@ export async function recalculateCampgroundAggregates(
     )
     SELECT
       ${campgroundId}::uuid,
-      avg(rating) FILTER (WHERE submitted_at >= ${nowIso}::timestamptz - interval '30 days')::real,
-      count(*) FILTER (WHERE submitted_at >= ${nowIso}::timestamptz - interval '30 days')::int,
+      avg(rating) FILTER (WHERE observed_on >= (${nowIso}::timestamptz - interval '30 days')::date)::real,
+      count(*) FILTER (WHERE observed_on >= (${nowIso}::timestamptz - interval '30 days')::date)::int,
       avg(rating)::real,
       count(*)::int,
-      max(submitted_at),
+      max(observed_on)::timestamptz,
       ${nowIso}::timestamptz
     FROM reports
     WHERE campground_id = ${campgroundId}::uuid

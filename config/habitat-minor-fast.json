@@ -1,0 +1,30 @@
+{
+  "kind": "north-america-minor-campground-habitat-profile",
+  "version": "habitat-minor-fast-v1",
+  "status": "production-input-beta",
+  "selection": "active verified US and Canadian campgrounds with fewer than 50 documented campsites or no documented capacity",
+  "gridResolutionM": 30,
+  "analysisRadiusM": 3000,
+  "distanceRingWeights": [0.6, 0.3, 0.1],
+  "largeWaterMinimumAreaM2": 100000,
+  "smallWaterMinimumAreaM2": 1800,
+  "smallWaterDensityScale": 5,
+  "lakeProximityScaleM": 250,
+  "riverProximityScaleM": 500,
+  "fastStreamMinimumGradient": 0.015,
+  "slowStreamMaximumGradient": 0.005,
+  "stagnantWaterWeights": {
+    "marsh": 0.4,
+    "otherWetland": 0.2,
+    "seasonalWater": 0.15,
+    "smallWaterDensity": 0.15,
+    "slowRiver": 0.1
+  },
+  "sources": [
+    "esa-worldcover-2021-v200",
+    "jrc-global-surface-water-v1.4",
+    "copernicus-dem-glo30-2021",
+    "nasa-power-merra2-1991-2020"
+  ],
+  "deferredEnrichment": ["cwim3a", "usfws-nwi", "bc-freshwater-atlas"]
+}
