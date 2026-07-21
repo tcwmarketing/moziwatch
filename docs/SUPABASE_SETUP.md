@@ -22,9 +22,11 @@ Optional forecast settings:
 
 - Secret `OPEN_METEO_API_KEY` when the selected Open-Meteo plan requires one.
 - Variable `OPEN_METEO_BASE_URL` for a commercial or self-hosted endpoint.
-- Variable `FORECAST_GRID_DEGREES` to override the default 2.5-degree beta grid.
+- Variable `FORECAST_MODEL_MODE`; leave it unset or set `v3-shadow` until shadow review is complete.
 
 The `Daily mosquito forecast` workflow runs at 05:15 UTC and can also be started manually from the Actions tab. It safely performs no publication while `DATABASE_URL` is absent.
+
+Before the first scheduled run, migrate the database and populate active habitat profiles with the offline North American habitat workflow. Provisional prototype seeders were removed after measured production coverage was established.
 
 ## 3. Configure the deployed Next.js application
 
@@ -41,6 +43,8 @@ At minimum, configure the deployment variables documented in [ENVIRONMENT.md](./
 - `RESEND_FROM`
 
 The project does not require a Supabase URL, anon key, service-role key, or Supabase Auth settings.
+
+MoziWatch does not query the Supabase Data API from the browser. Application tables have row-level security enabled and direct grants to the `anon` and `authenticated` Data API roles revoked; server routes use the private PostgreSQL connection instead. Run `npm run prelaunch:audit` after migrations to confirm no application table is missing RLS or unexpectedly exposed through those roles.
 
 ## 4. Add production campground data
 

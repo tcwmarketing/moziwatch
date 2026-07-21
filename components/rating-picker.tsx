@@ -19,8 +19,8 @@ export function RatingPicker({
             key={choice.value}
             className={
               value === choice.value
-                ? "rating-choice selected"
-                : "rating-choice"
+                ? `rating-choice rating-level-${choice.value} selected`
+                : `rating-choice rating-level-${choice.value}`
             }
           >
             <input

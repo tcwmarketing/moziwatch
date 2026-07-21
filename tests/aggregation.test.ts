@@ -8,7 +8,7 @@ const report = (
   status: AggregationReport["moderationStatus"] = "published",
 ): AggregationReport => ({
   rating,
-  submittedAt: new Date(now.getTime() - daysAgo * 86400000),
+  observedAt: new Date(now.getTime() - daysAgo * 86400000),
   moderationStatus: status,
 });
 

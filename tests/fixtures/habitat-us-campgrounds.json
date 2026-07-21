@@ -1,0 +1,32 @@
+{
+  "exportedAt": "2026-07-16T00:00:00Z",
+  "count": 2,
+  "campgrounds": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "slug": "fixture-flamingo-campground",
+      "name": "Flamingo Campground",
+      "latitude": 25.1372,
+      "longitude": -80.9413,
+      "country": "US",
+      "region": "FL",
+      "locationType": "developed_campground",
+      "sourceGeometry": null,
+      "forecastCadence": "weekly",
+      "hasMeasuredProfile": false
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "slug": "fixture-mather-campground",
+      "name": "Mather Campground",
+      "latitude": 36.0543,
+      "longitude": -112.1408,
+      "country": "US",
+      "region": "AZ",
+      "locationType": "developed_campground",
+      "sourceGeometry": null,
+      "forecastCadence": "weekly",
+      "hasMeasuredProfile": false
+    }
+  ]
+}

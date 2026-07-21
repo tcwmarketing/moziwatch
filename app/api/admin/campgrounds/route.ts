@@ -3,6 +3,7 @@ import { sqlClient } from "@/db";
 import { getApiAdmin } from "@/lib/api-admin";
 import { isSameOrigin } from "@/lib/privacy";
 import { campgroundInput } from "@/lib/validation";
+import { normalizeName } from "@/worker/locations/types";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request))
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
   const row = parsed.data;
   const inserted = await sqlClient<
     { id: string }[]
-  >`INSERT INTO campgrounds (name, slug, address, city, region, country, postal_code, latitude, longitude, website, description, data_source, data_license) VALUES (${row.name}, ${row.slug}, ${row.address}, ${row.city}, ${row.region}, ${row.country}, ${row.postalCode}, ${row.latitude}, ${row.longitude}, ${row.website || null}, ${row.description || null}, 'administrator', 'administrator-supplied') RETURNING id`;
+  >`INSERT INTO campgrounds (name, normalized_name, slug, address, city, region, country, postal_code, latitude, longitude, website, data_source) VALUES (${row.name}, ${normalizeName(row.name)}, ${row.slug}, ${row.address}, ${row.city}, ${row.region}, ${row.country}, ${row.postalCode}, ${row.latitude}, ${row.longitude}, ${row.website || null}, 'administrator') RETURNING id`;
   await sqlClient`INSERT INTO admin_audit_logs (actor_id, action, target_type, target_id) VALUES (${admin.user.id}, 'create_campground', 'campground', ${inserted[0].id})`;
   return NextResponse.json({ id: inserted[0].id }, { status: 201 });
 }

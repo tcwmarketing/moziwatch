@@ -1,5 +1,5 @@
 export const RATING_CHOICES = [
-  { value: 1, label: "No mosquitoes", shortLabel: "None" },
+  { value: 1, label: "None", shortLabel: "None" },
   { value: 2, label: "Light", shortLabel: "Light" },
   { value: 3, label: "Moderate", shortLabel: "Moderate" },
   { value: 4, label: "Heavy", shortLabel: "Heavy" },
@@ -20,12 +20,18 @@ export const MARKER_STATES = [
     key: "low",
     label: "No mosquitoes to light",
     min: 1,
-    max: 1.99,
+    max: 2.49,
     color: "#2F7D58",
   },
-  { key: "moderate", label: "Moderate", min: 2, max: 2.99, color: "#E1B93F" },
-  { key: "high", label: "Heavy", min: 3, max: 3.99, color: "#D76B2D" },
-  { key: "severe", label: "Severe", min: 4, max: 5, color: "#8F2D2D" },
+  {
+    key: "moderate",
+    label: "Moderate",
+    min: 2.5,
+    max: 3.49,
+    color: "#B88600",
+  },
+  { key: "high", label: "Heavy", min: 3.5, max: 4.49, color: "#C95620" },
+  { key: "severe", label: "Severe", min: 4.5, max: 5, color: "#8F2D2D" },
 ] as const;
 
 export type MarkerState = (typeof MARKER_STATES)[number];

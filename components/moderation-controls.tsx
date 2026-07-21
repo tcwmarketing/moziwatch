@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type Status = "published" | "hidden" | "rejected" | "deleted";
+type Status = "published" | "spam" | "hidden" | "rejected" | "deleted";
 
 export function ModerationControls({
   reportId,
@@ -40,6 +40,7 @@ export function ModerationControls({
           }}
         >
           <option value="published">Published</option>
+          <option value="spam">Spam</option>
           <option value="hidden">Hidden</option>
           <option value="rejected">Rejected</option>
           <option value="deleted">Deleted</option>

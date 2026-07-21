@@ -26,7 +26,10 @@ export async function POST(request: Request) {
   const parsed = reportInput.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
     return NextResponse.json(
-      { error: "Check the rating and comment, then try again." },
+      {
+        error:
+          "Check the rating, observation date and comment, then try again.",
+      },
       { status: 400 },
     );
 
@@ -55,6 +58,10 @@ export async function POST(request: Request) {
     : existingToken || newAnonymousToken();
 
   try {
+    const observedOn =
+      parsed.data.observationMode === "older"
+        ? parsed.data.observedOn!
+        : new Date().toISOString().slice(0, 10);
     const report = await createReport({
       campgroundId: parsed.data.campgroundId,
       rating: parsed.data.rating,
@@ -64,6 +71,7 @@ export async function POST(request: Request) {
         ? hmacIdentifier(`anonymous:${anonymousToken}`)
         : null,
       ipHash: hmacIdentifier(`ip:${ip}`),
+      observedOn,
     });
     const response = NextResponse.json({ ok: true, report });
     if (!existingToken && anonymousToken) {

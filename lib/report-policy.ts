@@ -25,6 +25,6 @@ export function isWithinDuplicateWindow(previous: Date, now: Date) {
   return elapsed >= 0 && elapsed < DUPLICATE_WINDOW_MS;
 }
 
-export function isInRecentWindow(submittedAt: Date, now: Date) {
-  return submittedAt.getTime() >= now.getTime() - RECENT_WINDOW_MS;
+export function isInRecentWindow(observedAt: Date, now: Date) {
+  return observedAt.getTime() >= now.getTime() - RECENT_WINDOW_MS;
 }

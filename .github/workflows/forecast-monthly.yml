@@ -1,0 +1,45 @@
+name: Monthly mosquito outlook
+
+on:
+  schedule:
+    # ECMWF SEAS5 updates monthly on the 5th; publish after that update.
+    - cron: "45 6 6 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monthly-mosquito-outlook
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      OPEN_METEO_API_KEY: ${{ secrets.OPEN_METEO_API_KEY }}
+      OPEN_METEO_SEASONAL_BASE_URL: ${{ vars.OPEN_METEO_SEASONAL_BASE_URL }}
+    steps:
+      - name: Check forecast configuration
+        id: config
+        shell: bash
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::Add the DATABASE_URL repository secret to enable monthly outlook publication."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v4
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.config.outputs.configured == 'true'
+        run: npm ci
+      - if: steps.config.outputs.configured == 'true'
+        run: npm run forecast:run-monthly

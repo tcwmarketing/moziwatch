@@ -11,6 +11,7 @@ const client = postgres(assertDisposableTestDatabase(), {
 const database = drizzle({ client, schema });
 await client`CREATE SCHEMA IF NOT EXISTS extensions`;
 await client`CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA extensions`;
+await client`CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions`;
 await migrate(database, { migrationsFolder: "./drizzle" });
 await client.end();
 console.log("Dedicated test database migrations complete.");

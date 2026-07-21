@@ -16,7 +16,7 @@ export async function sendEmail(message: Message) {
   if (process.env.NODE_ENV === "production" && !from)
     throw new Error("RESEND_FROM is required in production");
   const { error } = await new Resend(apiKey).emails.send({
-    from: from || "Camp Signal <onboarding@resend.dev>",
+    from: from || "MoziWatch <onboarding@resend.dev>",
     ...message,
   });
   if (error) throw new Error(`Resend delivery failed: ${error.message}`);

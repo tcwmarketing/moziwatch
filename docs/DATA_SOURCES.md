@@ -1,28 +1,56 @@
 # Data sources and licensing
 
-Reviewed 2026-07-14. Production operators must recheck terms before launch and keep source-specific attribution beside displayed data.
+Reviewed 2026-07-16. Recheck terms before production launch and retain source-specific attribution with displayed or exported data.
 
-| Source                                 | Phase 1 use                                                | Licence and redistribution                                                                                                                                                     | Coverage and updates                                                                    | Missing-data behavior                                                                             |
-| -------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Protomaps Hosted API and OpenStreetMap | Complete vector basemap                                    | Protomaps hosted usage policy; OpenStreetMap ODbL attribution. Commercial Protomaps API use requires sponsorship.                                                              | Global; Protomaps says hosted tiles update at an irregular, less-than-weekly frequency. | Map shows a configuration notice if a key is absent. No second map provider is used.              |
-| Open-Meteo Forecast API                | Daily weather input only, called by the server worker      | Weather data is CC BY 4.0 with attribution. The free endpoint is non-commercial with published request limits. Commercial production requires a paid endpoint or self-hosting. | Canada and US via best-match weather models; model updates vary by provider.            | A missing variable or failed batch fails the forecast run. The last published run remains cached. |
-| Camper reports                         | Campground marker ratings and optional future model signal | First-party submissions under site terms.                                                                                                                                      | Campground locations in Canada and the US; immediate after publication.                 | No reports produces a gray marker and a clear empty state.                                        |
+## Product and weather
 
-## Researched adapters not enabled in Phase 1
+| Source                                  | Use                                                                                      | Licence / operational note                                                                                                                   |
+| --------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Protomaps Hosted API and OpenStreetMap  | Complete MapLibre basemap                                                                | Protomaps hosted policy and OpenStreetMap ODbL attribution. Commercial hosted use requires the appropriate Protomaps plan.                   |
+| Open-Meteo forecast and historical APIs | Batched 60-day context, hourly activity, seven-day outlook and explicit history backfill | CC BY 4.0 and upstream attribution. The public endpoint is non-commercial with limits; production needs an appropriate plan or self-hosting. |
+| Camper reports                          | Observed ratings plus v3 recent/historical evidence                                      | First-party submissions under the site terms. Observed ratings remain separate from model output.                                            |
 
-These sources are suitable candidates but are not silently substituted for missing production inputs:
+## Campground locations
 
-- USGS 3DEP elevation: United States, public domain, updated as source projects are acquired.
-- Natural Resources Canada HRDEM and CDEM: Canada, Open Government Licence Canada. HRDEM coverage is still expanding and CDEM is an older national archive.
-- US Fish and Wildlife Service National Wetlands Inventory: United States, public federal data with irregular updates and known unmapped areas.
-- Canadian National Wetlands Inventory: Open Government Licence Canada, updated as needed. The 2025 inventory covered about 33 percent of Canada, so missing polygons do not mean no wetland.
-- Annual National Land Cover Database: United States land cover. A production adapter must pin a release and preserve USGS attribution and quality metadata.
-- NASA SMAP: soil moisture. A production adapter must select a product, resolution, latency tier, and Earthdata access method before use.
-- CDC ArboNET and MosquitoNET: disease and vector surveillance, not general biting nuisance. Passive reporting, provisional data, and local release restrictions make this unsuitable as a direct nuisance label without agreements and epidemiological review.
-- Public Health Agency of Canada seasonal mosquito-borne disease surveillance: reports positive mosquito pools and disease activity, not biting nuisance. National presentation is updated during the transmission season, but granular redistribution and comparability require confirmation.
+| Source                         | Use                                                                             | Licence / coverage                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Overture Places                | Broad US and non-BC Canadian exact-`campground` discovery                       | Overture record-level source licences; release and sources retained. |
+| Parks Canada accommodations    | Federal campgrounds outside BC                                                  | Open Government Licence - Canada. Individual pitches consolidated.   |
+| Québec tourism syndication     | Registered Québec campgrounds                                                   | CC BY 4.0.                                                           |
+| Nova Scotia park entrances     | Provincial camping parks                                                        | Open Government Licence - Nova Scotia.                               |
+| RIDB / Recreation.gov          | US federal recreation facilities                                                | RIDB API agreement and required Recreation.gov attribution.          |
+| National Park Service API      | NPS campground gap enrichment                                                   | US government data subject to published NPS API terms.               |
+| USDA Forest Service ArcGIS     | USFS campground gap enrichment                                                  | U.S. government data and published USDA disclaimer.                  |
+| Recreation Sites and Trails BC | BC recreation sites with a positive campsite count                              | Open Government Licence - British Columbia.                          |
+| RIDB campsite inventory        | Reservable campsite records grouped by linked U.S. federal facility             | RIDB API Access Agreement; counts can exclude non-reservable sites.  |
+| BC Parks Data API              | Provincial parks with active campground operating areas                         | Open Government Licence - British Columbia and published API terms.  |
+| GeoNames cities500             | Offline nearest-place and province/state derivation for coordinate-only records | CC BY 4.0; attribution and field provenance retained.                |
 
-The model infrastructure exposes provider boundaries for weather and environmental features. Wetland, land-cover, elevation, soil-moisture, and official trap-count adapters must be enabled only after their licences, spatial completeness, refresh process, and redistribution terms are approved.
+## Implemented habitat sources
 
-## Campground seed data
+| Source                                                                                                            | Measurement                                                   | Resolution / period                | Licence and missing-data behavior                                                                                |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| [ESA WorldCover 2021 v200](https://esa-worldcover.org/en/data-access)                                             | Forest, vegetation and land-cover fractions                   | 10 m                               | CC BY 4.0. A missing tile fails that campground instead of inventing land cover.                                 |
+| [JRC Global Surface Water v1.4](https://global-surface-water.appspot.com/download)                                | Seasonal and persistent water, water components and shoreline | 30 m; 1984-2021                    | Copernicus free/open use; attribute `Source: EC JRC/Google`. Open water is never treated as marsh.               |
+| [Copernicus DEM GLO-30 Public](https://registry.opendata.aws/copernicus-dem/)                                     | Elevation and slope                                           | 30 m; 2021 release                 | Copernicus DEM public licence. Missing terrain is recorded and lowers confidence.                                |
+| [NASA POWER MERRA-2 climatology](https://power.larc.nasa.gov/docs/services/api/temporal/climatology/)             | Consistent long-term rainfall climate                         | 0.5 x 0.625 degrees; 1991-2020     | NASA open-data policy; acknowledge NASA POWER/MERRA-2. Coarse regional context, not a rain gauge.                |
+| [Canadian Wetland Inventory Map v3A](https://open.canada.ca/data/en/dataset/87127901-bd6d-46de-9142-e1362d980174) | Canadian bog, fen, swamp and marsh enrichment                 | 10 m                               | Open Government Licence - Canada. Absence is not interpreted as no wetland.                                      |
+| [USFWS National Wetlands Inventory](https://www.fws.gov/program/national-wetlands-inventory/web-mapping-services) | US wetland, emergent-marsh, pond and lake enrichment          | Mapped vectors; live REST snapshot | US federal public data. Retain USFWS source and mapping limitations; service updates twice yearly.               |
+| [BC Freshwater Atlas](https://catalogue.data.gov.bc.ca/dataset/freshwater-atlas)                                  | BC wetlands, lakes, rivers, stream gradients and shoreline    | Mapped vectors                     | Open Government Licence - British Columbia. Other provinces use the national baseline until an adapter is added. |
 
-`db/seed.ts` contains fictional development records with approximate coordinates. It is labelled `development-only`, must not be treated as a directory, and must never be promoted as licensed production campground data. Administrators can import properly licensed or operator-owned CSV data with a preview and duplicate review.
+`habitat-north-america-v1` preserves source version, resolution, processing time, per-source coverage and known gaps on every profile. Missing polygons never automatically mean habitat absence.
+
+## Supplemental sources
+
+- [HydroLAKES](https://www.hydrosheds.org/products/hydrolakes) is permitted under CC BY 4.0 for QA or regions without better hydrography. The implemented pipeline already separates large water with JRC plus NWI/BC vectors, so it does not repeatedly download the 820 MB global file.
+- OpenStreetMap water/wetland features may enrich the profile from a regional PBF. The continental worker does not issue thousands of requests to public Overpass instances.
+- USGS 3DEP, NRCan HRDEM/MRDEM and regulatory floodplain layers are appropriate future local enrichments where coverage and redistribution terms are pinned.
+- WorldClim is not used because its current general licence restricts commercial use. NASA POWER provides the consistent permitted rainfall baseline.
+
+## Not used as nuisance labels
+
+CDC ArboNET, MosquitoNET and Canadian mosquito-borne disease surveillance concern disease/vector surveillance rather than camper biting nuisance. They are not direct forecast labels. Google Maps, The Dyrt, Campendium, Hipcamp, KOA and other commercial directories are not mined without an explicit licensed feed or written permission.
+
+## OSM location-import policy
+
+OpenStreetMap is used through Protomaps for the basemap, but is not queried or imported as a campground-location source in this phase. The legacy regional-PBF adapter remains dormant for historical reproducibility and is excluded from `locations:import:all`, refresh commands, and schedules.

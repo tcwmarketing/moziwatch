@@ -1,0 +1,47 @@
+{
+  "kind": "campground-habitat-weather-beta",
+  "status": "beta",
+  "version": "mosquito-campground-beta-v2",
+  "createdAt": "2026-07-15T00:00:00.000Z",
+  "usesUserReports": false,
+  "evaluation": {
+    "method": "expert-configured-prototype-not-trained",
+    "auc": null,
+    "brier": null
+  },
+  "componentWeights": { "habitat": 0.44, "weather": 0.56 },
+  "habitatWeights": {
+    "wetlands": 0.16,
+    "marshes": 0.18,
+    "seasonalWater": 0.13,
+    "smallWaterBodies": 0.12,
+    "stagnantWater": 0.13,
+    "lakeShoreline": 0.04,
+    "largeOpenWater": 0.01,
+    "fastRiver": 0.01,
+    "slowRiver": 0.03,
+    "forestVegetation": 0.08,
+    "drainage": 0.04,
+    "rainfallClimate": 0.04,
+    "landCover": 0.03
+  },
+  "weatherWeights": {
+    "temperature": 0.19,
+    "overnightLow": 0.11,
+    "humidity": 0.13,
+    "dewPoint": 0.09,
+    "rainfallLag": 0.18,
+    "soilMoisture": 0.12,
+    "season": 0.1,
+    "evening": 0.08
+  },
+  "parameters": {
+    "temperatureOptimalC": 25,
+    "temperatureSpreadC": 9,
+    "coldCutoffC": 5,
+    "windSuppressionStartsKmh": 12,
+    "windStrongKmh": 32,
+    "activeRainSuppressionMm": 4
+  },
+  "notes": "Frozen v2 baseline. Expert-configured and not trained from camper reports. Do not modify; create a new version instead."
+}

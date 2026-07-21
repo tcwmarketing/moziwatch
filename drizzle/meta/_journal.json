@@ -15,6 +15,139 @@
       "when": 1784067149356,
       "tag": "0001_wide_leo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784103590464,
+      "tag": "0002_flaky_vanisher",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784106580077,
+      "tag": "0003_tranquil_nitro",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784143057353,
+      "tag": "0004_useful_shape",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784147166068,
+      "tag": "0005_purple_power_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784179766062,
+      "tag": "0006_lazy_ironclad",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784183540460,
+      "tag": "0007_tidy_silver_centurion",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784231127673,
+      "tag": "0008_ancient_gertrude_yorkes",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784243050458,
+      "tag": "0009_wooden_caretaker",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784246932926,
+      "tag": "0010_illegal_blue_shield",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784257442523,
+      "tag": "0011_quick_amazoness",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784275911364,
+      "tag": "0012_promote_verified_location_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784311154700,
+      "tag": "0013_daffy_tinkerer",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1784314967888,
+      "tag": "0014_huge_black_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1784320000000,
+      "tag": "0015_directory_capacity_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1784358051610,
+      "tag": "0016_early_fallen_one",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784526778862,
+      "tag": "0017_shallow_mystique",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784534051187,
+      "tag": "0018_groovy_boom_boom",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784623296321,
+      "tag": "0019_remove_legacy_forecast_grid",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1784625448830,
+      "tag": "0020_lock_data_api_tables",
+      "breakpoints": true
     }
   ]
 }

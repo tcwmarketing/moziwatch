@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    localPatterns: [
+      { pathname: "/moziwatch-logo.png" },
+      { pathname: "/product-images/**" },
+    ],
+  },
   async headers() {
     return [
       {

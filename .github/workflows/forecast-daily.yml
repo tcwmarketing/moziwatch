@@ -15,12 +15,14 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # The public endpoint may enforce an hourly cooldown. A customer API key
+    # avoids that delay; this ceiling still lets the resumable fallback finish.
+    timeout-minutes: 240
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       OPEN_METEO_API_KEY: ${{ secrets.OPEN_METEO_API_KEY }}
       OPEN_METEO_BASE_URL: ${{ vars.OPEN_METEO_BASE_URL }}
-      FORECAST_GRID_DEGREES: ${{ vars.FORECAST_GRID_DEGREES }}
+      FORECAST_MODEL_MODE: ${{ vars.FORECAST_MODEL_MODE || 'v3-shadow' }}
     steps:
       - name: Check forecast configuration
         id: config
@@ -43,3 +45,5 @@ jobs:
         run: npm ci
       - if: steps.config.outputs.configured == 'true'
         run: npm run forecast:run
+      - if: always() && steps.config.outputs.configured == 'true'
+        run: npm run forecast:cleanup

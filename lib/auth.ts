@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { admin } from "better-auth/plugins";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { sendEmail } from "./email";
@@ -23,7 +24,7 @@ const facebook =
     : undefined;
 
 export const auth = betterAuth({
-  appName: process.env.NEXT_PUBLIC_APP_NAME || "Camp Signal",
+  appName: process.env.NEXT_PUBLIC_APP_NAME || "MoziWatch",
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: "pg", schema }),
@@ -57,6 +58,18 @@ export const auth = betterAuth({
       });
     },
   },
+  user: {
+    changeEmail: {
+      enabled: true,
+      sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+        await sendEmail({
+          to: user.email,
+          subject: "Approve your MoziWatch email change",
+          text: `Approve changing your MoziWatch sign-in email to ${newEmail}: ${url}`,
+        });
+      },
+    },
+  },
   socialProviders: {
     ...(google ? { google } : {}),
     // Facebook does not provide a reliable per-email verification signal. A site
@@ -71,10 +84,15 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    useSecureCookies: process.env.NODE_ENV === "production",
+    useSecureCookies:
+      process.env.NODE_ENV === "production" &&
+      Boolean(process.env.BETTER_AUTH_URL?.startsWith("https://")),
     crossSubDomainCookies: { enabled: false },
   },
-  plugins: [nextCookies()],
+  plugins: [
+    admin({ defaultRole: "member", adminRoles: ["admin"] }),
+    nextCookies(),
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;

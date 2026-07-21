@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { CampgroundPrefetchLink } from "@/components/campground-prefetch-link";
 import type {
-  FillLayerSpecification,
   GeoJSONSource,
   Map as MapLibreMap,
   MapLayerMouseEvent,
   StyleSpecification,
 } from "maplibre-gl";
 import { MARKER_STATES } from "@/config/ratings";
-import { findWaterMaskPlacement } from "@/lib/map-layers";
+import { mapViewportCovers, type MapViewport } from "@/lib/map-query";
 import { ReportForm } from "./report-form";
 
 type MapConfig = {
@@ -20,22 +19,46 @@ type MapConfig = {
   pmtilesUrl: string;
 };
 type Period = "recent" | "historical";
+type MapScope = "verified" | "all";
 type Selected = Record<string, string | number | null>;
+type CampgroundMapFeature = {
+  type: "Feature";
+  geometry: { type: "Point"; coordinates: [number, number] };
+  properties: Record<string, string | number | boolean | null>;
+};
+type CampgroundMapCollection = {
+  type: "FeatureCollection";
+  features: CampgroundMapFeature[];
+};
+type MapCacheEntry = {
+  period: Period;
+  scope: MapScope;
+  search: string;
+  zoom: number;
+  bounds: MapViewport | null;
+  data: CampgroundMapCollection;
+};
 
-const emptyCollection = { type: "FeatureCollection" as const, features: [] };
+const emptyCollection: CampgroundMapCollection = {
+  type: "FeatureCollection",
+  features: [],
+};
 
 export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const allCampgrounds = useRef<typeof emptyCollection>(emptyCollection);
-  const [period, setPeriod] = useState<Period>("recent");
-  const [forecastOn, setForecastOn] = useState(true);
+  const reportDialogRef = useRef<HTMLDialogElement>(null);
+  const periodRef = useRef<Period>("recent");
+  const scopeRef = useRef<MapScope>("verified");
+  const queryRef = useRef("");
+  const mapRequestRef = useRef<AbortController | null>(null);
+  const detailCacheRef = useRef<Map<string, Selected>>(new Map());
+  const detailPrefetchRef = useRef<Map<string, Promise<Selected>>>(new Map());
+  const mapCacheRef = useRef<MapCacheEntry[]>([]);
+  const refreshMapRef = useRef<() => void>(() => undefined);
+  const searchMapRef = useRef<(search: string) => void>(() => undefined);
+  const scope: MapScope = "verified";
   const missingBasemapKey = mapConfig.mode !== "pmtiles" && !mapConfig.apiKey;
-  const [forecastMeta, setForecastMeta] = useState(
-    missingBasemapKey
-      ? "Forecast display will start after the basemap is configured."
-      : "Checking forecast...",
-  );
   const [selected, setSelected] = useState<Selected | null>(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState(
@@ -43,37 +66,6 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
       ? "Add a Protomaps API key to load campground and forecast map layers."
       : "Loading campground reports...",
   );
-
-  function searchThisArea() {
-    const map = mapRef.current;
-    const source = map?.getSource("campgrounds") as GeoJSONSource | undefined;
-    if (!map || !source) return;
-    const bounds = map.getBounds();
-    const normalized = query.trim().toLowerCase();
-    const visible = {
-      ...allCampgrounds.current,
-      features: allCampgrounds.current.features.filter(
-        (feature: {
-          geometry?: { coordinates?: [number, number] };
-          properties?: { name?: string; city?: string; region?: string };
-        }) => {
-          const coordinates = feature.geometry?.coordinates;
-          const matchesText = normalized
-            ? [
-                feature.properties?.name,
-                feature.properties?.city,
-                feature.properties?.region,
-              ].some((value) => value?.toLowerCase().includes(normalized))
-            : true;
-          return coordinates
-            ? bounds.contains(coordinates) && matchesText
-            : false;
-        },
-      ),
-    };
-    source.setData(visible);
-    setStatus(`${visible.features.length} campgrounds in this map area`);
-  }
 
   function searchNearMe() {
     if (!navigator.geolocation)
@@ -85,9 +77,7 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
           center: [coords.longitude, coords.latitude],
           zoom: 8,
         });
-        setStatus(
-          "Map centered near your current location. Choose Search this area to filter campgrounds.",
-        );
+        setStatus("Map centered near your current location.");
       },
       () =>
         setStatus(
@@ -102,6 +92,10 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
     if (mapConfig.mode !== "pmtiles" && !mapConfig.apiKey) return;
     let cancelled = false;
     let cleanupProtocol: (() => void) | undefined;
+    let moveTimer: ReturnType<typeof setTimeout> | undefined;
+    let lastSettledZoom = 3;
+    const detailCache = detailCacheRef.current;
+    const detailPrefetch = detailPrefetchRef.current;
 
     async function startMap() {
       const maplibre = await import("maplibre-gl");
@@ -150,6 +144,24 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
         attributionControl: false,
       });
       mapRef.current = map;
+      lastSettledZoom = Math.floor(map.getZoom());
+      const initialCampgrounds = requestCampgrounds(map, "recent").catch(
+        (error: unknown) => {
+          if (error instanceof DOMException && error.name === "AbortError")
+            return null;
+          throw error;
+        },
+      );
+      refreshMapRef.current = () => {
+        void loadCampgrounds(
+          map,
+          periodRef.current,
+          queryRef.current || undefined,
+        );
+      };
+      searchMapRef.current = (search) => {
+        void loadCampgrounds(map, periodRef.current, search, false);
+      };
       map.addControl(
         new maplibre.NavigationControl({ showCompass: false }),
         "top-right",
@@ -171,90 +183,9 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
         }),
       );
       map.on("load", async () => {
-        map.addSource("mosquito-forecast", {
-          type: "geojson",
-          data: emptyCollection,
-        });
-        const waterMask = findWaterMaskPlacement(map.getStyle().layers);
-        map.addLayer(
-          {
-            id: "mosquito-forecast-heat",
-            type: "heatmap",
-            source: "mosquito-forecast",
-            maxzoom: 11,
-            paint: {
-              "heatmap-weight": [
-                "interpolate",
-                ["linear"],
-                ["get", "score"],
-                0,
-                0,
-                1,
-                1,
-              ],
-              "heatmap-intensity": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                2,
-                0.55,
-                9,
-                2,
-              ],
-              "heatmap-radius": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                2,
-                30,
-                6,
-                48,
-                9,
-                64,
-              ],
-              "heatmap-opacity": 0.68,
-              "heatmap-color": [
-                "interpolate",
-                ["linear"],
-                ["heatmap-density"],
-                0,
-                "rgba(247,243,222,0)",
-                0.25,
-                "#f1d65c",
-                0.5,
-                "#ee973f",
-                0.75,
-                "#c84c36",
-                1,
-                "#6f1d3b",
-              ],
-            },
-          },
-          waterMask?.layer.id,
-        );
-        if (waterMask) {
-          const originalWaterLayer = waterMask.layer as FillLayerSpecification;
-          map.addLayer(
-            {
-              ...originalWaterLayer,
-              id: "mosquito-forecast-water-mask",
-              paint: {
-                ...originalWaterLayer.paint,
-                // A fractionally translucent duplicate renders after the
-                // heatmap and prevents its blur from showing through water.
-                "fill-opacity": 0.999,
-                "fill-antialias": false,
-              },
-            },
-            waterMask.beforeId,
-          );
-        }
         map.addSource("campgrounds", {
           type: "geojson",
           data: emptyCollection,
-          cluster: true,
-          clusterMaxZoom: 9,
-          clusterRadius: 46,
         });
         map.addLayer({
           id: "campground-clusters",
@@ -262,7 +193,7 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
           source: "campgrounds",
           filter: ["has", "point_count"],
           paint: {
-            "circle-color": "#173f35",
+            "circle-color": "#0b4b45",
             "circle-radius": [
               "step",
               ["get", "point_count"],
@@ -310,25 +241,24 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
         });
         map.on("click", "campground-markers", (event: MapLayerMouseEvent) => {
           const props = event.features?.[0]?.properties;
-          if (props) setSelected(props as Selected);
-        });
-        map.on(
-          "click",
-          "campground-clusters",
-          async (event: MapLayerMouseEvent) => {
-            const feature = event.features?.[0];
-            const source = map.getSource("campgrounds") as GeoJSONSource;
-            if (!feature?.properties?.cluster_id) return;
-            const zoom = await source.getClusterExpansionZoom(
-              feature.properties.cluster_id,
+          if (props?.id)
+            void loadCampgroundDetail(
+              String(props.id),
+              props as Record<string, string | number | null>,
             );
-            if (feature.geometry.type === "Point")
-              map.easeTo({
-                center: feature.geometry.coordinates as [number, number],
-                zoom,
-              });
-          },
-        );
+        });
+        map.on("click", "campground-clusters", (event: MapLayerMouseEvent) => {
+          const feature = event.features?.[0];
+          if (feature?.geometry.type === "Point")
+            map.easeTo({
+              center: feature.geometry.coordinates as [number, number],
+              zoom: Math.min(10, Math.max(map.getZoom() + 2, 5)),
+            });
+        });
+        map.on("mouseenter", "campground-markers", (event) => {
+          const id = event.features?.[0]?.properties?.id;
+          if (id) void prefetchCampgroundDetail(String(id));
+        });
         for (const layer of ["campground-markers", "campground-clusters"]) {
           map.on("mouseenter", layer, () => {
             map.getCanvas().style.cursor = "pointer";
@@ -337,50 +267,283 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
             map.getCanvas().style.cursor = "";
           });
         }
-        await Promise.all([loadCampgrounds(map, "recent"), loadForecast(map)]);
+        map.on("movestart", () => {
+          if (moveTimer) clearTimeout(moveTimer);
+        });
+        map.on("moveend", () => {
+          if (queryRef.current) return;
+          const nextZoom = Math.floor(map.getZoom());
+          const zoomChanged = nextZoom !== lastSettledZoom;
+          const zoomedOut = nextZoom < lastSettledZoom;
+          lastSettledZoom = nextZoom;
+          if (zoomChanged) {
+            const usedCache = applyCachedCampgrounds(map, periodRef.current);
+            if (zoomedOut && !usedCache && nextZoom <= 8) {
+              (map.getSource("campgrounds") as GeoJSONSource).setData(
+                emptyCollection,
+              );
+              setStatus("Loading campground map groups...");
+            }
+            void loadCampgrounds(map, periodRef.current);
+          } else {
+            moveTimer = setTimeout(
+              () => void loadCampgrounds(map, periodRef.current),
+              120,
+            );
+          }
+        });
+        const data = await initialCampgrounds;
+        if (data) applyCampgrounds(map, data);
       });
     }
 
-    async function loadCampgrounds(map: MapLibreMap, selectedPeriod: Period) {
-      try {
-        const response = await fetch(
-          `/api/map/campgrounds?period=${selectedPeriod}`,
+    async function requestCampgrounds(
+      map: MapLibreMap,
+      selectedPeriod: Period,
+      search?: string,
+      includeBounds = true,
+    ) {
+      mapRequestRef.current?.abort();
+      const controller = new AbortController();
+      mapRequestRef.current = controller;
+      const requestZoom = Math.floor(map.getZoom());
+      const parameters = new URLSearchParams({
+        period: selectedPeriod,
+        zoom: String(requestZoom),
+        scope: scopeRef.current,
+      });
+      let requestBounds: MapViewport | null = null;
+      if (includeBounds) {
+        const bounds = map.getBounds();
+        requestBounds = {
+          west: bounds.getWest(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          north: bounds.getNorth(),
+        };
+        parameters.set(
+          "bbox",
+          [
+            requestBounds.west,
+            requestBounds.south,
+            requestBounds.east,
+            requestBounds.north,
+          ]
+            .map((value) => value.toFixed(4))
+            .join(","),
         );
-        if (!response.ok) throw new Error();
-        const data = await response.json();
-        allCampgrounds.current = data;
-        (map.getSource("campgrounds") as GeoJSONSource).setData(data);
-        setStatus(`${data.features.length} campgrounds with report status`);
-      } catch {
+      }
+      if (search) parameters.set("q", search);
+      const response = await fetch(`/api/map/campgrounds?${parameters}`, {
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error("Campground map request failed");
+      const data = (await response.json()) as CampgroundMapCollection;
+      const cacheEntry: MapCacheEntry = {
+        period: selectedPeriod,
+        scope: scopeRef.current,
+        search: search || "",
+        zoom: requestZoom,
+        bounds: requestBounds,
+        data,
+      };
+      mapCacheRef.current = [
+        cacheEntry,
+        ...mapCacheRef.current.filter(
+          (entry) =>
+            !(
+              entry.period === cacheEntry.period &&
+              entry.scope === cacheEntry.scope &&
+              entry.search === cacheEntry.search &&
+              entry.zoom === cacheEntry.zoom &&
+              entry.bounds?.west === cacheEntry.bounds?.west &&
+              entry.bounds?.south === cacheEntry.bounds?.south &&
+              entry.bounds?.east === cacheEntry.bounds?.east &&
+              entry.bounds?.north === cacheEntry.bounds?.north
+            ),
+        ),
+      ].slice(0, 24);
+      return data;
+    }
+
+    function viewport(map: MapLibreMap): MapViewport {
+      const bounds = map.getBounds();
+      return {
+        west: bounds.getWest(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        north: bounds.getNorth(),
+      };
+    }
+
+    function applyCachedCampgrounds(
+      map: MapLibreMap,
+      selectedPeriod: Period,
+      search = "",
+      includeBounds = true,
+    ) {
+      const currentBounds = includeBounds ? viewport(map) : null;
+      const cached = mapCacheRef.current.find(
+        (entry) =>
+          entry.period === selectedPeriod &&
+          entry.scope === scopeRef.current &&
+          entry.search === search &&
+          entry.zoom === Math.floor(map.getZoom()) &&
+          (currentBounds === null
+            ? entry.bounds === null
+            : entry.bounds !== null &&
+              mapViewportCovers(entry.bounds, currentBounds)),
+      );
+      if (!cached) return false;
+      applyCampgrounds(map, cached.data);
+      return true;
+    }
+
+    function applyCampgrounds(map: MapLibreMap, data: CampgroundMapCollection) {
+      if (!map.getSource("campgrounds")) return;
+      (map.getSource("campgrounds") as GeoJSONSource).setData(data);
+      const total = data.features.reduce(
+        (sum, feature) => sum + Number(feature.properties.point_count || 1),
+        0,
+      );
+      const grouped = data.features.some(
+        (feature) => feature.properties.server_cluster,
+      );
+      setStatus(
+        queryRef.current
+          ? `${data.features.length.toLocaleString()} matching campgrounds`
+          : grouped
+            ? `${total.toLocaleString()} ${scopeRef.current === "verified" ? "verified" : "imported"} campgrounds in ${data.features.length.toLocaleString()} map groups`
+            : `${data.features.length.toLocaleString()} ${scopeRef.current === "verified" ? "verified" : "imported"} campgrounds in this map area`,
+      );
+      if (queryRef.current && data.features.length === 1)
+        map.easeTo({
+          center: data.features[0].geometry.coordinates,
+          zoom: 10,
+        });
+    }
+
+    async function loadCampgrounds(
+      map: MapLibreMap,
+      selectedPeriod: Period,
+      search?: string,
+      includeBounds = true,
+    ) {
+      try {
+        applyCachedCampgrounds(
+          map,
+          selectedPeriod,
+          search || "",
+          includeBounds,
+        );
+        const data = await requestCampgrounds(
+          map,
+          selectedPeriod,
+          search,
+          includeBounds,
+        );
+        applyCampgrounds(map, data);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
         setStatus("Campground reports are temporarily unavailable.");
       }
     }
 
-    async function loadForecast(map: MapLibreMap) {
+    function detailCacheKey(campgroundId: string) {
+      return `${campgroundId}:${periodRef.current}`;
+    }
+
+    function markerSelection(
+      campgroundId: string,
+      properties: Record<string, string | number | null>,
+    ): Selected {
+      return {
+        id: campgroundId,
+        name: properties.name || "Campground",
+        slug: properties.slug || "",
+        city: properties.city || "",
+        region: properties.region || "",
+        country: properties.country || "",
+        location_type_label: "Campground",
+        official_campsite_count: null,
+        verification_status: null,
+        source_label: null,
+        maintenance_status: null,
+        facilities_summary: null,
+        recent_average: properties.recent_average,
+        recent_count: properties.recent_count || 0,
+        historical_average: properties.historical_average,
+        historical_count: properties.historical_count || 0,
+        selected_average: properties.selected_average,
+        selected_count: properties.selected_count || 0,
+        severity_label: properties.severity_label || "No recent reports",
+        forecast_score: properties.forecast_score,
+        forecast_level: properties.forecast_level,
+        forecast_confidence: properties.forecast_confidence,
+      };
+    }
+
+    function requestCampgroundDetail(campgroundId: string) {
+      const key = detailCacheKey(campgroundId);
+      const cached = detailCacheRef.current.get(key);
+      if (cached) return Promise.resolve(cached);
+      const pending = detailPrefetchRef.current.get(key);
+      if (pending) return pending;
+      const request = fetch(
+        `/api/map/campgrounds/${encodeURIComponent(campgroundId)}?period=${periodRef.current}`,
+      )
+        .then(async (response) => {
+          if (!response.ok) throw new Error("Campground detail request failed");
+          const detail = (await response.json()) as Selected;
+          detailCacheRef.current.set(key, detail);
+          return detail;
+        })
+        .finally(() => detailPrefetchRef.current.delete(key));
+      detailPrefetchRef.current.set(key, request);
+      return request;
+    }
+
+    async function prefetchCampgroundDetail(campgroundId: string) {
       try {
-        const response = await fetch("/api/forecast/latest");
-        const result = await response.json();
-        if (!result.available)
-          return setForecastMeta(result.message || "Forecast unavailable");
-        (map.getSource("mosquito-forecast") as GeoJSONSource).setData(
-          result.data,
-        );
-        const demo = result.demonstrationData ? " Demonstration data." : "";
-        const beta =
-          result.modelStatus === "beta"
-            ? " Beta weather-only model; not trained from user reports."
-            : "";
-        setForecastMeta(
-          `Experimental forecast updated ${new Date(result.generatedAt).toLocaleDateString()}.${beta}${demo}`,
-        );
+        await requestCampgroundDetail(campgroundId);
       } catch {
-        setForecastMeta("Experimental forecast unavailable");
+        // A hover prefetch is opportunistic; clicking will retry it.
+      }
+    }
+
+    async function loadCampgroundDetail(
+      campgroundId: string,
+      properties?: Record<string, string | number | null>,
+    ) {
+      const cached = detailCacheRef.current.get(detailCacheKey(campgroundId));
+      if (cached) {
+        setSelected(cached);
+        setStatus("Campground details loaded");
+        return;
+      }
+      if (properties) setSelected(markerSelection(campgroundId, properties));
+      setStatus("Loading additional campground details...");
+      try {
+        setSelected(await requestCampgroundDetail(campgroundId));
+        setStatus("Campground details loaded");
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
+        setStatus("Campground details are temporarily unavailable.");
       }
     }
 
     void startMap();
     return () => {
       cancelled = true;
+      if (moveTimer) clearTimeout(moveTimer);
+      mapRequestRef.current?.abort();
+      mapCacheRef.current = [];
+      detailCache.clear();
+      detailPrefetch.clear();
+      refreshMapRef.current = () => undefined;
+      searchMapRef.current = () => undefined;
       mapRef.current?.remove();
       mapRef.current = null;
       cleanupProtocol?.();
@@ -388,52 +551,25 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
   }, [mapConfig]);
 
   useEffect(() => {
+    scopeRef.current = scope;
+    mapCacheRef.current = [];
     const map = mapRef.current;
     if (!map?.getSource("campgrounds")) return;
-    fetch(`/api/map/campgrounds?period=${period}`)
-      .then((response) => response.json())
-      .then((data) => {
-        allCampgrounds.current = data;
-        (map.getSource("campgrounds") as GeoJSONSource).setData(data);
-        setSelected(null);
-      })
-      .catch(() =>
-        setStatus("Campground reports are temporarily unavailable."),
-      );
-  }, [period]);
+    setSelected(null);
+    refreshMapRef.current();
+  }, [scope]);
 
   useEffect(() => {
+    const normalized = query.trim();
+    queryRef.current = normalized;
     const map = mapRef.current;
-    if (map?.getLayer("mosquito-forecast-heat"))
-      map.setLayoutProperty(
-        "mosquito-forecast-heat",
-        "visibility",
-        forecastOn ? "visible" : "none",
-      );
-  }, [forecastOn]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    const source = map?.getSource("campgrounds") as GeoJSONSource | undefined;
-    if (!source) return;
-    const normalized = query.trim().toLowerCase();
-    const filtered = normalized
-      ? {
-          ...allCampgrounds.current,
-          features: allCampgrounds.current.features.filter(
-            (feature: {
-              properties?: { name?: string; city?: string; region?: string };
-            }) =>
-              [
-                feature.properties?.name,
-                feature.properties?.city,
-                feature.properties?.region,
-              ].some((value) => value?.toLowerCase().includes(normalized)),
-          ),
-        }
-      : allCampgrounds.current;
-    source.setData(filtered);
-    setStatus(`${filtered.features.length} matching campgrounds`);
+    if (!map?.getSource("campgrounds")) return;
+    if (!normalized) {
+      refreshMapRef.current();
+      return;
+    }
+    const timer = setTimeout(() => searchMapRef.current(normalized), 220);
+    return () => clearTimeout(timer);
   }, [query]);
 
   return (
@@ -451,33 +587,6 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
             placeholder="Search campground, city, or region"
           />
         </label>
-        <div className="segmented" aria-label="Campground rating period">
-          <button
-            className={period === "recent" ? "active" : ""}
-            onClick={() => setPeriod("recent")}
-            aria-pressed={period === "recent"}
-          >
-            Past 30 Days
-          </button>
-          <button
-            className={period === "historical" ? "active" : ""}
-            onClick={() => setPeriod("historical")}
-            aria-pressed={period === "historical"}
-          >
-            Historical
-          </button>
-        </div>
-        <label className="forecast-toggle">
-          <input
-            type="checkbox"
-            checked={forecastOn}
-            onChange={(event) => setForecastOn(event.target.checked)}
-          />
-          <span>Forecast</span>
-        </label>
-        <button className="map-action" type="button" onClick={searchThisArea}>
-          Search this area
-        </button>
         <button className="map-action" type="button" onClick={searchNearMe}>
           Near me
         </button>
@@ -504,11 +613,6 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
             </span>
           ))}
         </div>
-        <p>
-          <b className="heat-swatch" /> Beta weather suitability forecast on
-          land; water areas are masked
-        </p>
-        <small>{forecastMeta}</small>
       </div>
       {selected ? (
         <aside
@@ -522,35 +626,53 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
           >
             ×
           </button>
-          <p className="eyebrow">Actual camper reports</p>
+          <p className="eyebrow">Campground details</p>
           <h2>{selected.name}</h2>
+          <p className="location-kind">
+            <strong>{selected.location_type_label || "Campground"}</strong>
+            {selected.official_campsite_count !== null
+              ? ` · ${selected.official_campsite_count} campsite${Number(selected.official_campsite_count) === 1 ? "" : "s"}`
+              : ""}
+          </p>
           <p>
             {selected.city}, {selected.region}
           </p>
-          <div className="rating-summary-grid">
-            <div>
-              <span>Past 30 Days</span>
-              <strong>
-                {selected.recent_average
-                  ? Number(selected.recent_average).toFixed(1)
-                  : "No reports"}
-              </strong>
-              <small>{selected.recent_count} reports</small>
-            </div>
-            <div>
-              <span>Historical</span>
-              <strong>
-                {selected.historical_average
-                  ? Number(selected.historical_average).toFixed(1)
-                  : "No reports"}
-              </strong>
-              <small>{selected.historical_count} reports</small>
-            </div>
-          </div>
+          {selected.maintenance_status || selected.facilities_summary ? (
+            <p className="location-source-details">
+              {[selected.maintenance_status, selected.facilities_summary]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          ) : null}
+          {selected.source_label ? (
+            <small>
+              {selected.verification_status === "unverified"
+                ? "Imported discovery record from"
+                : "Location verified from"}{" "}
+              {selected.source_label}.
+            </small>
+          ) : null}
           <p className="severity-line">
             <i style={{ background: String(selected.marker_color) }} />
             Current marker: {selected.severity_label}
           </p>
+          <div className="forecast-sheet-summary">
+            <p className="eyebrow">Mosquito outlook</p>
+            {selected.forecast_score !== null &&
+            selected.forecast_score !== undefined ? (
+              <p>
+                <strong>{selected.forecast_level}</strong> tonight ·{" "}
+                {Math.round(Number(selected.forecast_score) * 100)}
+                /100 · {Math.round(Number(selected.forecast_confidence) * 100)}%
+                confidence
+              </p>
+            ) : (
+              <p>No campground-specific outlook is available yet.</p>
+            )}
+            <small>
+              Modeled outlooks never change the report-colored marker.
+            </small>
+          </div>
           <p className="recent-line">
             Most recent:{" "}
             {selected.most_recent_report_at
@@ -559,16 +681,41 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
                 ).toLocaleDateString()
               : "No published reports"}
           </p>
-          <details>
-            <summary className="button primary">Submit a report</summary>
-            <ReportForm campgroundId={String(selected.id)} compact />
-          </details>
-          <Link
-            className="button secondary"
-            href={`/campgrounds/${selected.slug}`}
+          <div className="campground-sheet-actions">
+            <button
+              className="button primary"
+              type="button"
+              onClick={() => reportDialogRef.current?.showModal()}
+            >
+              Submit Report
+            </button>
+            <CampgroundPrefetchLink
+              className="button secondary"
+              href={`/campgrounds/${selected.slug}`}
+            >
+              Full Details
+            </CampgroundPrefetchLink>
+          </div>
+          <dialog
+            className="site-dialog map-report-dialog"
+            ref={reportDialogRef}
+            onClick={(event) => {
+              if (event.target === event.currentTarget)
+                event.currentTarget.close();
+            }}
           >
-            View full campground page
-          </Link>
+            <button
+              className="dialog-close"
+              type="button"
+              aria-label="Close report form"
+              onClick={() => reportDialogRef.current?.close()}
+            >
+              &times;
+            </button>
+            <p className="eyebrow">Actual camper report</p>
+            <h2>Report mosquitoes at {selected.name}</h2>
+            <ReportForm campgroundId={String(selected.id)} compact />
+          </dialog>
         </aside>
       ) : null}
     </section>
