@@ -9,6 +9,27 @@ separate from other applications on the same VPS. Apache must proxy the
 protocol and client address headers. Set `TRUST_PROXY_HOPS=1` for this single
 controlled Apache proxy.
 
+The tested SiteWorx proxy rules are stored in
+`deploy/apache/moziwatch.htaccess`. Install that file as
+`~/moziwatch.com/html/.htaccess`; it keeps ACME validation local to Apache and
+proxies every other request to the private Next.js port. The domain root and a
+static route must both return HTTP 200 through Apache before DNS is changed.
+
+Prepare a production environment from a private staging copy with:
+
+```bash
+node scripts/prepare-production-env.mjs \
+  /private/path/source.env \
+  .env.example \
+  /private/path/.env.production.local \
+  --delete-source
+```
+
+The helper copies only variables documented in `.env.example`, excludes test
+database and command-only seed variables, applies the `moziwatch.com` runtime
+overrides, requires the current map/auth/Google/Stripe launch settings, writes
+mode `0600`, and can delete the staging copy. It never prints secret values.
+
 Build and start a release from its release directory with:
 
 ```bash
