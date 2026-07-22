@@ -56,7 +56,7 @@ export default function Home() {
           </Link>
         </div>
       </section>
-      <AdsenseUnit className="adsense-home-top" />
+      <AdsenseUnit className="adsense-home-top" format="horizontal" />
       <MapExperience
         mapConfig={{
           mode: publicEnv.basemapMode,

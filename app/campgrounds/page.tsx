@@ -124,7 +124,7 @@ export default async function CampgroundDirectoryPage({ searchParams }: Props) {
           Page {directory.page} of {directory.pageCount}
         </span>
       </div>
-      <AdsenseUnit className="adsense-directory" />
+      <AdsenseUnit className="adsense-directory" format="horizontal" />
       {directory.rows.length ? (
         <ul className="campground-directory-list">
           {directory.rows.map((campground) => (

@@ -13,7 +13,15 @@ const ADSENSE_CLIENT = "ca-pub-8746662508326131";
 const MOZITOP_SLOT = "6407699046";
 export const ADSENSE_SCRIPT_URL = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
 
-export function AdsenseUnit({ className = "" }: { className?: string }) {
+type AdsenseFormat = "auto" | "horizontal" | "rectangle" | "vertical";
+
+export function AdsenseUnit({
+  className = "",
+  format = "auto",
+}: {
+  className?: string;
+  format?: AdsenseFormat;
+}) {
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -45,7 +53,7 @@ export function AdsenseUnit({ className = "" }: { className?: string }) {
           style={{ display: "block" }}
           data-ad-client={ADSENSE_CLIENT}
           data-ad-slot={MOZITOP_SLOT}
-          data-ad-format="auto"
+          data-ad-format={format}
           data-full-width-responsive="true"
         />
       </div>

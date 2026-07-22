@@ -176,7 +176,7 @@ a:focus-visible {
   margin: 0;
 }
 .adsense-placement {
-  --adsense-reserved-height: clamp(100px, 18vw, 280px);
+  --adsense-reserved-height: 100px;
   width: 100%;
   min-height: calc(var(--adsense-reserved-height) + 20px);
   min-width: 0;

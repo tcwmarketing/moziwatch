@@ -346,7 +346,7 @@ export default async function CampgroundPage({ params, searchParams }: Props) {
             </p>
             <ReportForm campgroundId={campground.id} />
           </section>
-          <AdsenseUnit className="adsense-sidebar" />
+          <AdsenseUnit className="adsense-sidebar" format="rectangle" />
         </aside>
       </div>
     </div>
