@@ -1,10 +1,11 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 export function NewPasswordForm() {
+  const router = useRouter();
   const token = useSearchParams().get("token") || "";
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -22,12 +23,13 @@ export function NewPasswordForm() {
           newPassword: password,
           token,
         });
-        setMessage(
-          result.error
-            ? "This reset link is invalid or expired."
-            : "Password updated. You can now sign in.",
-        );
-        setBusy(false);
+        if (result.error) {
+          setMessage("This reset link is invalid or expired.");
+          setBusy(false);
+          return;
+        }
+
+        router.replace("/sign-in?passwordReset=success");
       }}
     >
       <p className="eyebrow">Secure account recovery</p>

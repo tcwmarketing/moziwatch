@@ -40,16 +40,18 @@ export function AuthForm({
   mode,
   embedded = false,
   callbackURL = "/dashboard",
+  initialMessage = "",
   onSignedIn,
   onModeChange,
 }: {
   mode: "sign-in" | "sign-up";
   embedded?: boolean;
   callbackURL?: string;
+  initialMessage?: string;
   onSignedIn?: () => void | Promise<void>;
   onModeChange?: (mode: "sign-in" | "sign-up") => void;
 }) {
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
   const [busy, setBusy] = useState(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
