@@ -58,7 +58,7 @@ Use Stripe test mode first. The application accepts one-time CAD contributions f
 2. Set every production-required variable documented in `ENVIRONMENT.md`. Generate independent secrets for Better Auth and IP HMAC. Do not reuse credentials, and never deploy `TEST_DATABASE_URL` or `TEST_DATABASE_DISPOSABLE`.
 3. Register the Protomaps production origin on the API key. Confirm sponsorship for commercial use.
 4. Configure Google redirect URI `/api/auth/callback/google` and Facebook redirect URI `/api/auth/callback/facebook`. Request only name, email, `openid`, and basic profile scopes. Facebook emails receive site verification because Meta does not provide a reliable verification claim.
-5. Configure Resend, verify its sending domain, and publish SPF, DKIM, and preferably DMARC. Local development logs links when Resend is omitted.
+5. Configure Brevo transactional email, authenticate `moziwatch.com`, publish the generated DKIM, DMARC, and branded-subdomain records, and authorize the VPS outbound IP in Brevo. Local development logs links when `EMAIL_PROVIDER=console`.
 6. Review the beta model configuration and configure the appropriate commercial or self-hosted Open-Meteo endpoint. Replace the beta artifact only after a trained model has representative data and temporal evaluation.
 7. Run database migrations before the application rollout. Keep the checked-in GitHub Actions forecast workflow as the only daily scheduler; do not also start a long-running Node forecast scheduler.
 8. Configure RIDB/NPS credentials, install `osmium-tool` on the import worker, and complete the dry-run/full-import sequence in `LOCATION_IMPORTS.md`. Run one location scheduler or platform cron, not both.
