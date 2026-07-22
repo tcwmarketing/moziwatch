@@ -44,37 +44,6 @@ export default async function SupportPage({
         <p className="notice">Choose an amount from $1 to $500.</p>
       ) : null}
       <DonationForm />
-      <section className="support-trust" aria-labelledby="support-trust-title">
-        <div>
-          <p className="eyebrow">Support with confidence</p>
-          <h2 id="support-trust-title">
-            A small contribution with a clear use
-          </h2>
-        </div>
-        <div className="support-trust-grid">
-          <article>
-            <h3>Secure payment</h3>
-            <p>
-              Payment details are entered on Stripe&apos;s hosted checkout.
-              MoziWatch does not receive or store your full card number.
-            </p>
-          </article>
-          <article>
-            <h3>No recurring charge</h3>
-            <p>
-              This is a one-time voluntary donation—not a subscription or an
-              ongoing commitment.
-            </p>
-          </article>
-          <article>
-            <h3>Practical project costs</h3>
-            <p>
-              Donations help pay for mapping, weather processing, campground
-              data maintenance and the services needed to keep MoziWatch online.
-            </p>
-          </article>
-        </div>
-      </section>
       <section className="support-founder content-card">
         <Image
           className="support-founder-photo"
@@ -107,6 +76,37 @@ export default async function SupportPage({
             <Link href="/about">See how MoziWatch works</Link>
             <Link href="/contact">Contact MoziWatch</Link>
           </div>
+        </div>
+      </section>
+      <section className="support-trust" aria-labelledby="support-trust-title">
+        <div>
+          <p className="eyebrow">Support with confidence</p>
+          <h2 id="support-trust-title">
+            A small contribution with a clear use
+          </h2>
+        </div>
+        <div className="support-trust-grid">
+          <article>
+            <h3>Secure payment</h3>
+            <p>
+              Payment details are entered on Stripe&apos;s hosted checkout.
+              MoziWatch does not receive or store your full card number.
+            </p>
+          </article>
+          <article>
+            <h3>No recurring charge</h3>
+            <p>
+              This is a one-time voluntary donation—not a subscription or an
+              ongoing commitment.
+            </p>
+          </article>
+          <article>
+            <h3>Practical project costs</h3>
+            <p>
+              Donations help pay for mapping, weather processing, campground
+              data maintenance and the services needed to keep MoziWatch online.
+            </p>
+          </article>
         </div>
       </section>
     </div>
