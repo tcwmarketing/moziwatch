@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { createRecaptchaToken } from "@/lib/recaptcha-client";
+import { RECAPTCHA_ACTIONS } from "@/lib/recaptcha-actions";
 
 export function LocationSuggestionForm({
   campgroundId,
@@ -21,26 +23,37 @@ export function LocationSuggestionForm({
     event.preventDefault();
     setBusy(true);
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/location-suggestions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        campgroundId,
-        kind: campgroundId ? "correction" : "missing",
-        name: form.get("name"),
-        country: form.get("country"),
-        region: form.get("region"),
-        locality: form.get("locality"),
-        comment: form.get("comment"),
-        email: form.get("email"),
-      }),
-    });
-    const result = await response.json();
-    setMessage(
-      result.message || result.error || "The suggestion could not be sent.",
-    );
-    if (response.ok) event.currentTarget.reset();
-    setBusy(false);
+    try {
+      const botToken = await createRecaptchaToken(
+        RECAPTCHA_ACTIONS.locationSuggestion,
+      );
+      const response = await fetch("/api/location-suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          campgroundId,
+          kind: campgroundId ? "correction" : "missing",
+          name: form.get("name"),
+          country: form.get("country"),
+          region: form.get("region"),
+          locality: form.get("locality"),
+          comment: form.get("comment"),
+          email: form.get("email"),
+          botToken,
+        }),
+      });
+      const result = await response.json();
+      setMessage(
+        result.message || result.error || "The suggestion could not be sent.",
+      );
+      if (response.ok) event.currentTarget.reset();
+    } catch {
+      setMessage(
+        "The anti-bot check could not be loaded. Please refresh and try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <form className="suggestion-form" onSubmit={submit}>

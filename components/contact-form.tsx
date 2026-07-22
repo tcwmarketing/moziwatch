@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { createRecaptchaToken } from "@/lib/recaptcha-client";
+import { RECAPTCHA_ACTIONS } from "@/lib/recaptcha-actions";
 
 export function ContactForm() {
   const [busy, setBusy] = useState(false);
@@ -12,25 +14,34 @@ export function ContactForm() {
     setMessage("");
     const form = event.currentTarget;
     const data = new FormData(form);
-    const response = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: data.get("name"),
-        email: data.get("email"),
-        subject: data.get("subject"),
-        message: data.get("message"),
-      }),
-    });
-    const result = (await response.json().catch(() => null)) as {
-      message?: string;
-      error?: string;
-    } | null;
-    setMessage(
-      result?.message || result?.error || "Your message could not be sent.",
-    );
-    if (response.ok) form.reset();
-    setBusy(false);
+    try {
+      const botToken = await createRecaptchaToken(RECAPTCHA_ACTIONS.contact);
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.get("name"),
+          email: data.get("email"),
+          subject: data.get("subject"),
+          message: data.get("message"),
+          botToken,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as {
+        message?: string;
+        error?: string;
+      } | null;
+      setMessage(
+        result?.message || result?.error || "Your message could not be sent.",
+      );
+      if (response.ok) form.reset();
+    } catch {
+      setMessage(
+        "The anti-bot check could not be loaded. Please refresh and try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (

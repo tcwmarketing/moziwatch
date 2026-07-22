@@ -47,8 +47,10 @@ const productionOverrides = {
   BETTER_AUTH_URL: "https://moziwatch.com",
   TRUST_PROXY_HOPS: "1",
   OPEN_METEO_BASE_URL: "https://api.open-meteo.com/v1/forecast",
-  STRIPE_MODE: "test",
+  STRIPE_MODE: "live",
   STRIPE_DONATION_CURRENCY: "cad",
+  BOT_PROTECTION_PROVIDER: "recaptcha-enterprise",
+  RECAPTCHA_MIN_SCORE: "0.3",
 };
 
 for (const [key, value] of Object.entries(productionOverrides)) {
@@ -64,6 +66,9 @@ const requiredKeys = [
   "GOOGLE_CLIENT_SECRET",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
+  "GOOGLE_API_KEY",
+  "GOOGLE_CLOUD_PROJECT_ID",
+  "NEXT_PUBLIC_RECAPTCHA_SITE_KEY",
 ];
 const missingKeys = requiredKeys.filter((key) => !values.get(key));
 

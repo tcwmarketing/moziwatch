@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { RatingValue } from "@/config/ratings";
+import { createRecaptchaToken } from "@/lib/recaptcha-client";
+import { RECAPTCHA_ACTIONS } from "@/lib/recaptcha-actions";
 import { RatingPicker } from "./rating-picker";
 
 export function ReportForm({
@@ -30,30 +32,40 @@ export function ReportForm({
         message: "Choose the condition you observed.",
       });
     setState({ kind: "saving" });
-    const response = await fetch("/api/reports", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        campgroundId,
-        rating,
-        comment,
-        observationMode,
-        observedOn: observationMode === "older" ? observedOn : undefined,
-      }),
-    });
-    const result = (await response.json()) as { error?: string };
-    if (!response.ok)
-      return setState({
-        kind: "error",
-        message: result.error || "The report could not be saved.",
+    try {
+      const botToken = await createRecaptchaToken(RECAPTCHA_ACTIONS.report);
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          campgroundId,
+          rating,
+          comment,
+          observationMode,
+          observedOn: observationMode === "older" ? observedOn : undefined,
+          botToken,
+        }),
       });
-    setState({
-      kind: "success",
-      message: "Thanks. Your campground report is now included.",
-    });
-    setComment("");
-    setObservationMode("recent");
-    setObservedOn("");
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok)
+        return setState({
+          kind: "error",
+          message: result.error || "The report could not be saved.",
+        });
+      setState({
+        kind: "success",
+        message: "Thanks. Your campground report is now included.",
+      });
+      setComment("");
+      setObservationMode("recent");
+      setObservedOn("");
+    } catch {
+      setState({
+        kind: "error",
+        message:
+          "The anti-bot check could not be loaded. Please refresh and try again.",
+      });
+    }
   }
 
   return (
