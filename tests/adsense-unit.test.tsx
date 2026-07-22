@@ -9,6 +9,7 @@ describe("AdsenseUnit", () => {
     expect(ADSENSE_SCRIPT_URL).toBe(
       "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8746662508326131",
     );
+    expect(markup).toContain('class="adsense-placement"');
     expect(markup).toContain('class="adsbygoogle"');
     expect(markup).toContain('data-ad-client="ca-pub-8746662508326131"');
     expect(markup).toContain('data-ad-slot="6407699046"');

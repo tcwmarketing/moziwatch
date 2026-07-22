@@ -176,10 +176,14 @@ a:focus-visible {
   margin: 0;
 }
 .adsense-placement {
+  --adsense-reserved-height: clamp(100px, 18vw, 280px);
   width: 100%;
+  min-height: calc(var(--adsense-reserved-height) + 20px);
   min-width: 0;
   overflow: hidden;
   text-align: center;
+  contain: layout paint;
+  contain-intrinsic-block-size: calc(var(--adsense-reserved-height) + 20px);
 }
 .adsense-placement > span {
   display: block;
@@ -190,7 +194,8 @@ a:focus-visible {
   text-transform: uppercase;
 }
 .adsense-placement .adsbygoogle {
-  min-height: 90px;
+  width: 100%;
+  min-height: var(--adsense-reserved-height);
 }
 .adsense-home-top {
   max-width: 1500px;
@@ -965,8 +970,8 @@ details summary::-webkit-details-marker {
   min-width: 0;
   align-content: start;
 }
-.adsense-sidebar .adsbygoogle {
-  min-height: 250px;
+.adsense-sidebar {
+  --adsense-reserved-height: 280px;
 }
 .campground-actions {
   min-height: 44px;
