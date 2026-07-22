@@ -56,15 +56,19 @@ export function HomeCityAutocomplete({
   return (
     <div className="home-city-autocomplete">
       <input
-        id="profile-home-city"
-        name="homeCity"
+        id="profile-place-search"
+        name="placeLookup"
+        type="search"
         value={value}
         autoComplete="off"
         data-lpignore="true"
         data-form-type="other"
+        data-1p-ignore="true"
+        data-bwignore="true"
         maxLength={120}
         placeholder="Start typing a city"
         role="combobox"
+        aria-autocomplete="list"
         aria-expanded={suggestions.length > 0}
         aria-controls="home-city-suggestions"
         onChange={(event) => {

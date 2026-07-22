@@ -32,7 +32,7 @@ export function ProfileForm({
     const email = String(form.get("email") || "")
       .trim()
       .toLowerCase();
-    const homeCity = String(form.get("homeCity") || "").trim();
+    const homeCity = String(form.get("placeLookup") || "").trim();
     if (homeCity && !homeCitySelection) {
       setMessage("Select your home city from the suggestions.");
       setBusy(false);
@@ -108,7 +108,7 @@ export function ProfileForm({
         />
       </label>
       <div className="profile-field">
-        <label htmlFor="profile-home-city">Home city</label>
+        <label htmlFor="profile-place-search">Home city</label>
         <HomeCityAutocomplete
           initial={
             initialHomeCitySelection ||

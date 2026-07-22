@@ -2581,6 +2581,14 @@ details summary::-webkit-details-marker {
 .home-city-autocomplete > input {
   width: 100%;
 }
+/* LastPass can ignore its own field opt-out markers for address fields. Hide
+   only its injected UI while the MoziWatch city search is active. */
+.home-city-autocomplete > div[data-lastpass-icon-root],
+.home-city-autocomplete > div[data-lastpass-root],
+body:has(#profile-place-search:focus) div[data-lastpass-icon-root],
+body:has(#profile-place-search:focus) div[data-lastpass-root] {
+  display: none !important;
+}
 .home-city-autocomplete ul {
   background: var(--paper);
   border: 1px solid rgba(11, 75, 69, 0.25);
