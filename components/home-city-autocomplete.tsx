@@ -60,6 +60,8 @@ export function HomeCityAutocomplete({
         name="homeCity"
         value={value}
         autoComplete="off"
+        data-lpignore="true"
+        data-form-type="other"
         maxLength={120}
         placeholder="Start typing a city"
         role="combobox"
