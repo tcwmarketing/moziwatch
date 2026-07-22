@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { requiresCooperativeMapGestures } from "@/lib/map-interactions";
 import type { Map as MapLibreMap } from "maplibre-gl";
 
 export function CampgroundMiniMap({
@@ -28,7 +29,9 @@ export function CampgroundMiniMap({
         style: styleUrl.replace("{key}", encodeURIComponent(apiKey)),
         center: [longitude, latitude],
         zoom: 10,
-        cooperativeGestures: true,
+        cooperativeGestures: requiresCooperativeMapGestures(
+          window.matchMedia.bind(window),
+        ),
         attributionControl: false,
       });
       mapRef.current = map;

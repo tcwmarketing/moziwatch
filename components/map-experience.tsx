@@ -9,6 +9,7 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 import { MARKER_STATES } from "@/config/ratings";
+import { requiresCooperativeMapGestures } from "@/lib/map-interactions";
 import { mapViewportCovers, type MapViewport } from "@/lib/map-query";
 import { ReportForm } from "./report-form";
 
@@ -141,7 +142,9 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
         zoom: 3.1,
         minZoom: 2,
         maxZoom: 16,
-        cooperativeGestures: true,
+        cooperativeGestures: requiresCooperativeMapGestures(
+          window.matchMedia.bind(window),
+        ),
         attributionControl: false,
       });
       mapRef.current = map;
