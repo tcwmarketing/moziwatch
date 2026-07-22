@@ -28,6 +28,7 @@ export function CampgroundMiniMap({
         style: styleUrl.replace("{key}", encodeURIComponent(apiKey)),
         center: [longitude, latitude],
         zoom: 10,
+        cooperativeGestures: true,
         attributionControl: false,
       });
       mapRef.current = map;

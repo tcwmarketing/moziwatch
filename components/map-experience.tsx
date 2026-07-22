@@ -141,6 +141,7 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
         zoom: 3.1,
         minZoom: 2,
         maxZoom: 16,
+        cooperativeGestures: true,
         attributionControl: false,
       });
       mapRef.current = map;
