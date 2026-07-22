@@ -50,6 +50,16 @@ export default function PrivacyPage() {
         </p>
       </section>
       <section>
+        <h2>Analytics and tag management</h2>
+        <p>
+          We use Google Tag Manager to load and manage approved website
+          measurement tools. Those tools may receive page URLs and technical
+          information about your browser or device under their own privacy
+          terms. Tag Manager does not change how campground reports or account
+          information are stored by MoziWatch.
+        </p>
+      </section>
+      <section>
         <h2>Retention and deletion</h2>
         <p>
           Published reports may be retained to preserve campground history. If

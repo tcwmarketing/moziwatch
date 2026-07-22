@@ -12,8 +12,9 @@ const serverSchema = z.object({
     .url()
     .default("https://api.open-meteo.com/v1/forecast"),
   OPEN_METEO_API_KEY: z.string().optional(),
-  RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM: z.string().optional(),
+  EMAIL_PROVIDER: z.enum(["brevo", "console"]).default("console"),
+  BREVO_API_KEY: z.string().min(1).optional(),
+  EMAIL_FROM: z.string().min(1).optional(),
   CONTACT_RECIPIENT_EMAIL: z.string().email().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),

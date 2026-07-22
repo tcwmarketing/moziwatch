@@ -30,7 +30,7 @@ npm run db:seed
 npm run dev
 ```
 
-Open `http://localhost:3000`. Without `RESEND_API_KEY`, verification links are logged by the development server only. Production fails email delivery closed when Resend is missing. Add a real Protomaps key to `.env.local`; the application does not substitute another basemap provider.
+Open `http://localhost:3000`. With `EMAIL_PROVIDER=console`, verification links are logged by the development server only. Production fails email delivery closed unless Brevo is selected and configured. Add a real Protomaps key to `.env.local`; the application does not substitute another basemap provider.
 
 To create an administrator, sign up and verify an account, then run:
 

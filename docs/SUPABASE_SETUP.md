@@ -39,8 +39,9 @@ At minimum, configure the deployment variables documented in [ENVIRONMENT.md](./
 - `IP_HASH_SECRET`
 - `NEXT_PUBLIC_APP_URL`
 - `NEXT_PUBLIC_PROTOMAPS_API_KEY`
-- `RESEND_API_KEY`
-- `RESEND_FROM`
+- `EMAIL_PROVIDER=brevo`
+- `BREVO_API_KEY`
+- `EMAIL_FROM`
 
 The project does not require a Supabase URL, anon key, service-role key, or Supabase Auth settings.
 
