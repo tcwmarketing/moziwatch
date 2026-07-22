@@ -35,6 +35,7 @@ a {
 }
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -45,6 +46,7 @@ a {
 }
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible,
 a:focus-visible {
@@ -2526,6 +2528,37 @@ details summary::-webkit-details-marker {
   display: grid;
   font-weight: 700;
   gap: 7px;
+}
+.contact-form input:not([type="hidden"]),
+.contact-form select,
+.contact-form textarea,
+.password-settings input,
+.admin-profile-search input,
+.profile-field input,
+.profile-field select,
+.profile-field textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #7f918b;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: inset 0 1px 2px rgba(11, 75, 69, 0.06);
+}
+.contact-form textarea,
+.profile-field textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+.contact-form input::placeholder,
+.contact-form textarea::placeholder,
+.password-settings input::placeholder,
+.admin-profile-search input::placeholder,
+.profile-field input::placeholder,
+.profile-field textarea::placeholder {
+  color: #65736e;
+  opacity: 1;
 }
 .contact-form-submit {
   align-items: center;
