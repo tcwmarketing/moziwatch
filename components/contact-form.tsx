@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createRecaptchaToken } from "@/lib/recaptcha-client";
 import { RECAPTCHA_ACTIONS } from "@/lib/recaptcha-actions";
 
-export function ContactForm() {
+export function ContactForm({ formProof }: { formProof: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -24,6 +24,8 @@ export function ContactForm() {
           email: data.get("email"),
           subject: data.get("subject"),
           message: data.get("message"),
+          website: data.get("website"),
+          formProof,
           botToken,
         }),
       });
@@ -73,6 +75,12 @@ export function ContactForm() {
           <option>Something else</option>
         </select>
       </label>
+      <div className="contact-honeypot" aria-hidden="true">
+        <label>
+          Leave this field blank
+          <input name="website" type="text" tabIndex={-1} autoComplete="off" />
+        </label>
+      </div>
       <label>
         Message
         <textarea

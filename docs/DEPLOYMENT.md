@@ -54,7 +54,7 @@ The application accepts one-time CAD contributions from $1 through $500 and stor
 
 ## reCAPTCHA Enterprise
 
-Public report, contact, and campground-suggestion forms obtain a single-use score-based token with a distinct action name. The server creates an assessment through the reCAPTCHA Enterprise v1 API, verifies token validity, action, production hostname, and the configurable score threshold, then fails closed when verification is unavailable. Production requires `BOT_PROTECTION_PROVIDER=recaptcha-enterprise`, `GOOGLE_API_KEY`, `GOOGLE_CLOUD_PROJECT_ID`, and `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`. The initial `RECAPTCHA_MIN_SCORE=0.3` blocks the highest-risk score while the site-specific model learns; review production scores before tightening it.
+Public report, contact, and campground-suggestion forms obtain a single-use score-based token with a distinct action name. The server creates an assessment through the reCAPTCHA Enterprise v1 API, verifies token validity, action, production hostname, and the configurable score threshold, then fails closed when verification is unavailable. Production requires `BOT_PROTECTION_PROVIDER=recaptcha-enterprise`, `GOOGLE_API_KEY`, `GOOGLE_CLOUD_PROJECT_ID`, and `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`. `RECAPTCHA_MIN_SCORE=0.3` rejects the highest-risk score. Contact assessments below `CONTACT_RECAPTCHA_INBOX_SCORE=0.7` are retained in Spam without emailing the administrator. Enable assessment platform logs and keep the application-stored assessment ID so confirmed administrator decisions can annotate Google's site-specific model.
 
 ## Production checklist
 

@@ -37,6 +37,12 @@ export type ManagedContactSubmission = {
   message: string;
   status: "inbox" | "spam" | "archived";
   spam_reasons: string[];
+  bot_provider: string;
+  bot_score: number | null;
+  bot_reasons: string[];
+  bot_action: string | null;
+  bot_annotation: string | null;
+  bot_annotated_at: string | Date | null;
   created_at: string | Date;
 };
 
@@ -416,6 +422,22 @@ function ContactSubmissions({
             {contact.spam_reasons.length ? (
               <small>Flagged: {contact.spam_reasons.join(", ")}</small>
             ) : null}
+            {contact.bot_score !== null ? (
+              <small>
+                reCAPTCHA score {contact.bot_score.toFixed(1)}
+                {contact.bot_action ? ` Â· ${contact.bot_action}` : ""}
+                {contact.bot_reasons.length
+                  ? ` Â· ${contact.bot_reasons.join(", ")}`
+                  : ""}
+                {contact.bot_annotation
+                  ? ` Â· confirmed ${contact.bot_annotation.toLowerCase()}`
+                  : ""}
+              </small>
+            ) : (
+              <small>
+                Assessment score unavailable for this older message.
+              </small>
+            )}
             <small>
               {contact.name} · {contact.email} ·{" "}
               {new Date(contact.created_at).toLocaleString()}

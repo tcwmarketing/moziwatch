@@ -629,6 +629,21 @@ export const contactSubmissions = pgTable(
     status: contactSubmissionStatus("status").notNull().default("inbox"),
     spamReasons: jsonb("spam_reasons").$type<string[]>().notNull().default([]),
     ipHash: text("ip_hash").notNull(),
+    emailHash: text("email_hash"),
+    contentFingerprint: varchar("content_fingerprint", { length: 16 }),
+    formProofValid: boolean("form_proof_valid").notNull().default(false),
+    botProvider: varchar("bot_provider", { length: 40 })
+      .notNull()
+      .default("none"),
+    botVerified: boolean("bot_verified").notNull().default(false),
+    botAssessmentId: text("bot_assessment_id"),
+    botScore: real("bot_score"),
+    botReasons: jsonb("bot_reasons").$type<string[]>().notNull().default([]),
+    botAction: varchar("bot_action", { length: 80 }),
+    botHostname: varchar("bot_hostname", { length: 253 }),
+    botInvalidReason: varchar("bot_invalid_reason", { length: 80 }),
+    botAnnotation: varchar("bot_annotation", { length: 20 }),
+    botAnnotatedAt: timestamp("bot_annotated_at", { withTimezone: true }),
     reviewerId: text("reviewer_id").references(() => user.id, {
       onDelete: "set null",
     }),
@@ -647,6 +662,14 @@ export const contactSubmissions = pgTable(
     ),
     index("contact_submissions_ip_created_idx").on(
       table.ipHash,
+      table.createdAt,
+    ),
+    index("contact_submissions_email_created_idx").on(
+      table.emailHash,
+      table.createdAt,
+    ),
+    index("contact_submissions_fingerprint_created_idx").on(
+      table.contentFingerprint,
       table.createdAt,
     ),
   ],

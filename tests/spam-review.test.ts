@@ -38,4 +38,26 @@ describe("submission spam review", () => {
       reasons: [],
     });
   });
+
+  it("routes a multi-signal search-ranking solicitation to spam", () => {
+    const result = reviewSubmissionContent(
+      "Your website was not showing up in Google, Yahoo, or Bing search results. We provide SEO, AEO, and GEO services for Squarespace, Shopify, Wix, WordPress, and GoDaddy websites.",
+    );
+    expect(result.isSpam).toBe(true);
+    expect(result.reasons).toEqual(
+      expect.arrayContaining([
+        "solicitation:search-visibility-pitch",
+        "solicitation:optimization-acronyms",
+        "solicitation:website-platform-list",
+      ]),
+    );
+  });
+
+  it("does not treat a request for contact details as spam by itself", () => {
+    expect(
+      reviewSubmissionContent(
+        "Could you send me the correct name, phone number, and email for the campground manager?",
+      ),
+    ).toEqual({ isSpam: false, reasons: [] });
+  });
 });

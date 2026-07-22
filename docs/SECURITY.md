@@ -6,7 +6,7 @@ A report is rejected only when it targets the same campground within the previou
 
 The browser token is 256 random bits in an HTTP-only, same-site cookie. It is not a fingerprint. IP addresses are normalized and immediately HMACed with a separate server secret. Raw IPs and raw anonymous tokens are never inserted into the database.
 
-General report traffic is limited to ten submissions per protected IP per hour. Optional Cloudflare Turnstile validation is configured through environment variables. Bot protection is disabled by default for local use and does not change the campground-specific duplicate policy.
+General report traffic is limited to ten submissions per protected IP per hour. Production public submissions use reCAPTCHA Enterprise action tokens that are assessed on the server and fail closed when verification is unavailable. Contact messages add a signed form-age proof, a honeypot, protected IP and email limits, repeated-template detection, and content review. Scores below the contact inbox threshold are retained in Spam without generating an email. Assessment scores and IDs are stored without retaining browser tokens; confirmed administrator decisions are sent back to Google as annotations.
 
 ## Proxy trust
 

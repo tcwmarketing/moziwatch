@@ -72,8 +72,10 @@ export default function PrivacyPage() {
           you submit. A campground suggestion or correction may contain the
           campground, location details, coordinates, comments, and an optional
           reply email. These submissions are reviewed by an administrator and
-          may be automatically placed in a spam queue when they contain links or
-          restricted terms associated with abuse.
+          may be automatically placed in a spam queue based on links, restricted
+          terms, repeated-message patterns, signed form timing, rate limits, or
+          other abuse indicators. Email and network addresses used for these
+          limits are stored as keyed, one-way values.
         </p>
 
         <h3>Donations</h3>
@@ -178,7 +180,10 @@ export default function PrivacyPage() {
           expected action, and site hostname, to return an abuse-risk
           assessment. reCAPTCHA Enterprise is used for security and spam
           prevention, not to decide credit, employment, insurance, or similar
-          eligibility. Its use is governed by the{" "}
+          eligibility. We retain the assessment identifier, score, action,
+          hostname, and reason codes for moderation and may tell Google whether
+          an administrator confirmed an event as legitimate or fraudulent. We do
+          not retain the single-use browser token. Its use is governed by the{" "}
           <a href="https://policies.google.com/privacy">
             Google Privacy Policy
           </a>{" "}

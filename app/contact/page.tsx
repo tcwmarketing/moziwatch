@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { absoluteUrl } from "@/lib/seo";
 import { ContactForm } from "@/components/contact-form";
+import { createFormProof } from "@/lib/form-proof";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Contact MoziWatch",
@@ -10,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default function ContactPage() {
+  const formProof = createFormProof("contact");
   return (
     <div className="content-page narrow prose-page contact-page">
       <p className="eyebrow">Contact us</p>
@@ -19,7 +23,7 @@ export default function ContactPage() {
         general feedback, use the form below and include as much relevant detail
         as you can.
       </p>
-      <ContactForm />
+      <ContactForm formProof={formProof} />
       <p>
         To correct a specific campground listing, use the “Suggest an edit”
         button on that campground&apos;s page so the location is included

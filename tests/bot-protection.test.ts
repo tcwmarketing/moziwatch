@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { verifyBotProtection } from "@/lib/bot-protection";
+import {
+  annotateBotAssessment,
+  assessBotProtection,
+  verifyBotProtection,
+} from "@/lib/bot-protection";
 import { RECAPTCHA_ACTIONS } from "@/lib/recaptcha-actions";
 
 const input = {
@@ -27,6 +31,7 @@ function assessment(
   } = {},
 ) {
   return {
+    name: "projects/moziwatch-project/assessments/assessment-123",
     tokenProperties: {
       valid: overrides.valid ?? true,
       action: overrides.action ?? RECAPTCHA_ACTIONS.report,
@@ -80,6 +85,55 @@ describe("reCAPTCHA Enterprise verification", () => {
     expect(new Headers(options.headers).get("Referer")).toBe(
       "https://moziwatch.com/",
     );
+  });
+
+  it("returns the assessment provenance needed for moderation", async () => {
+    configureEnterprise();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ...assessment({ score: 0.3 }),
+            riskAnalysis: { score: 0.3, reasons: ["AUTOMATION"] },
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    await expect(assessBotProtection(input)).resolves.toEqual(
+      expect.objectContaining({
+        accepted: true,
+        verified: true,
+        assessmentId: "projects/moziwatch-project/assessments/assessment-123",
+        score: 0.3,
+        reasons: ["AUTOMATION"],
+        action: RECAPTCHA_ACTIONS.report,
+        hostname: "moziwatch.com",
+      }),
+    );
+  });
+
+  it("annotates a confirmed spam assessment without exposing the API key", async () => {
+    configureEnterprise();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      annotateBotAssessment(
+        "projects/moziwatch-project/assessments/assessment-123",
+        "FRAUDULENT",
+      ),
+    ).resolves.toBe(true);
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/assessments/assessment-123:annotate?key=");
+    expect(JSON.parse(String(options.body))).toEqual({
+      annotation: "FRAUDULENT",
+      reasons: ["SOCIAL_SPAM"],
+    });
   });
 
   it.each([

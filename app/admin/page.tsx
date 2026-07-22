@@ -130,7 +130,9 @@ export default async function AdminPage() {
     timedAdminQuery(
       "contacts",
       sqlClient<ManagedContactSubmission[]>`
-      SELECT id, name, email, subject, message, status, spam_reasons, created_at
+      SELECT id, name, email, subject, message, status, spam_reasons, created_at,
+        bot_provider, bot_score, bot_reasons, bot_action, bot_annotation,
+        bot_annotated_at
       FROM contact_submissions
       ORDER BY created_at DESC
       LIMIT 200
