@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdsenseUnit } from "@/components/adsense-unit";
 import { MapExperience } from "@/components/map-experience";
 import { publicEnv } from "@/lib/env";
 import { absoluteUrl } from "@/lib/seo";
@@ -55,6 +56,7 @@ export default function Home() {
           </Link>
         </div>
       </section>
+      <AdsenseUnit className="adsense-home-top" />
       <MapExperience
         mapConfig={{
           mode: publicEnv.basemapMode,

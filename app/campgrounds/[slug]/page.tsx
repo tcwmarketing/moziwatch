@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { AdsenseUnit } from "@/components/adsense-unit";
 import {
   campgroundLocationTypeLabel,
   getCampgroundBySlug,
@@ -334,14 +335,18 @@ export default async function CampgroundPage({ params, searchParams }: Props) {
             </section>
           ) : null}
         </div>
-        <aside className="content-card report-panel">
-          <p className="eyebrow">Report what you observed</p>
-          <h2>How are the mosquitoes?</h2>
-          <p>
-            Your report updates the campground&apos;s observed rating and may
-            help adjust future outlooks without replacing actual camper reports.
-          </p>
-          <ReportForm campgroundId={campground.id} />
+        <aside className="campground-sidebar">
+          <section className="content-card report-panel">
+            <p className="eyebrow">Report what you observed</p>
+            <h2>How are the mosquitoes?</h2>
+            <p>
+              Your report updates the campground&apos;s observed rating and may
+              help adjust future outlooks without replacing actual camper
+              reports.
+            </p>
+            <ReportForm campgroundId={campground.id} />
+          </section>
+          <AdsenseUnit className="adsense-sidebar" />
         </aside>
       </div>
     </div>

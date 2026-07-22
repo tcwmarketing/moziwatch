@@ -175,6 +175,28 @@ a:focus-visible {
   align-self: center;
   margin: 0;
 }
+.adsense-placement {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+}
+.adsense-placement > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink-2);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.adsense-placement .adsbygoogle {
+  min-height: 90px;
+}
+.adsense-home-top {
+  max-width: 1500px;
+  margin: 0 auto 18px;
+  padding: 0 clamp(18px, 4vw, 64px);
+}
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -937,6 +959,15 @@ details summary::-webkit-details-marker {
   display: grid;
   gap: 20px;
 }
+.campground-sidebar {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  align-content: start;
+}
+.adsense-sidebar .adsbygoogle {
+  min-height: 250px;
+}
 .campground-actions {
   min-height: 44px;
   display: grid;
@@ -1681,8 +1712,7 @@ details summary::-webkit-details-marker {
   margin: 4px 0;
 }
 .report-panel {
-  position: sticky;
-  top: 24px;
+  position: static;
 }
 .distribution {
   display: grid;
@@ -1926,6 +1956,9 @@ details summary::-webkit-details-marker {
 }
 .directory-results-heading span {
   color: var(--ink-2);
+}
+.adsense-directory {
+  margin-bottom: 22px;
 }
 .campground-directory-list {
   list-style: none;

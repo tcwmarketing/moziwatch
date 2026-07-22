@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdsenseUnit } from "@/components/adsense-unit";
 import { CampgroundPrefetchLink } from "@/components/campground-prefetch-link";
 import { CampgroundDirectoryFilters as DirectoryFilterControls } from "@/components/campground-directory-filters";
 import { MosquitoRating } from "@/components/mosquito-rating";
@@ -123,6 +124,7 @@ export default async function CampgroundDirectoryPage({ searchParams }: Props) {
           Page {directory.page} of {directory.pageCount}
         </span>
       </div>
+      <AdsenseUnit className="adsense-directory" />
       {directory.rows.length ? (
         <ul className="campground-directory-list">
           {directory.rows.map((campground) => (

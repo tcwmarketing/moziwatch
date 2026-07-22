@@ -25,5 +25,7 @@ describe("security headers", () => {
     expect(contentSecurityPolicy).toContain(
       "https://pagead2.googlesyndication.com",
     );
+    expect(contentSecurityPolicy).toContain("https://*.googlesyndication.com");
+    expect(contentSecurityPolicy).toContain("https://*.doubleclick.net");
   });
 });
