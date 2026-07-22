@@ -1594,17 +1594,14 @@ details summary::-webkit-details-marker {
   margin-top: 24px;
   max-width: 760px;
 }
-.support-founder-mark {
-  align-items: center;
-  background: var(--forest-dark);
-  border-radius: 50%;
-  color: #fff;
-  display: flex;
-  font-size: 1.35rem;
-  font-weight: 850;
-  height: 58px;
-  justify-content: center;
-  width: 58px;
+.support-founder-photo {
+  aspect-ratio: 4 / 5;
+  border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(11, 75, 69, 0.16);
+  height: auto;
+  object-fit: cover;
+  object-position: center 38%;
+  width: 160px;
 }
 .support-founder-links {
   display: flex;
@@ -3000,6 +2997,9 @@ body:has(#profile-place-search:focus) div[data-lastpass-root] {
   }
   .support-founder {
     grid-template-columns: 1fr;
+  }
+  .support-founder-photo {
+    width: 132px;
   }
   .contact-form-grid,
   .admin-profile-row {

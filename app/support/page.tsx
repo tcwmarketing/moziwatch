@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { DonationForm } from "@/components/donation-form";
 import { absoluteUrl } from "@/lib/seo";
@@ -75,19 +76,34 @@ export default async function SupportPage({
         </div>
       </section>
       <section className="support-founder content-card">
-        <div className="support-founder-mark" aria-hidden="true">
-          C
-        </div>
+        <Image
+          className="support-founder-photo"
+          src="/clinton-dixson.webp"
+          alt="Clinton, founder of MoziWatch"
+          width={800}
+          height={1201}
+          sizes="(max-width: 760px) 132px, 160px"
+        />
         <div>
           <p className="eyebrow">Who is behind MoziWatch?</p>
-          <h2>Built by a camper who asks the same question</h2>
+          <h2>Hi, my name is Clinton</h2>
           <p>
-            I&apos;m Clinton, an avid camper. My family often wants to know how
-            bad the mosquitoes are before arriving, so we can bring the right
-            protection. I built MoziWatch to give campers one practical place to
-            check—and share—the conditions at a campground.
+            I built this website because it answers a question our family has
+            every time we go camping. How bad are the mosquitoes and how much
+            bug spray do we need? If we ask the question, I figured others do as
+            well, and there isn&apos;t a good place to find the answer. I hope
+            others will support this idea and we, as a community, can help each
+            other be prepared for those pesky bugs on the next camping
+            adventure. Thanks.
           </p>
           <div className="support-founder-links">
+            <a
+              href="https://www.facebook.com/ClintonDixson"
+              target="_blank"
+              rel="me noopener noreferrer"
+            >
+              Clinton on Facebook
+            </a>
             <Link href="/about">See how MoziWatch works</Link>
             <Link href="/contact">Contact MoziWatch</Link>
           </div>

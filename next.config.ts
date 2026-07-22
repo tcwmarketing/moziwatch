@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   images: {
     localPatterns: [
       { pathname: "/moziwatch-logo.png" },
+      { pathname: "/clinton-dixson.webp" },
       { pathname: "/product-images/**" },
     ],
   },
