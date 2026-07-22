@@ -16,6 +16,13 @@ const serverSchema = z.object({
   BREVO_API_KEY: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(1).optional(),
   CONTACT_RECIPIENT_EMAIL: z.string().email().optional(),
+  BOT_PROTECTION_PROVIDER: z
+    .enum(["none", "recaptcha-enterprise"])
+    .default("none"),
+  GOOGLE_API_KEY: z.string().min(1).optional(),
+  GOOGLE_CLOUD_PROJECT_ID: z.string().min(1).optional(),
+  NEXT_PUBLIC_RECAPTCHA_SITE_KEY: z.string().min(1).optional(),
+  RECAPTCHA_MIN_SCORE: z.coerce.number().min(0).max(1).default(0.3),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_MODE: z.enum(["test", "live"]).default("test"),
@@ -40,4 +47,5 @@ export const publicEnv = {
     "https://api.protomaps.com/styles/v5/light/en.json?key={key}",
   protomapsApiKey: process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY || "",
   protomapsPmtilesUrl: process.env.NEXT_PUBLIC_PROTOMAPS_PMTILES_URL || "",
+  recaptchaSiteKey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
 };

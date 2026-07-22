@@ -15,6 +15,7 @@ import {
   ReportRateLimitError,
 } from "@/lib/reports";
 import { reportInput } from "@/lib/validation";
+import { RECAPTCHA_ACTIONS } from "@/lib/recaptcha-actions";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request))
@@ -34,7 +35,14 @@ export async function POST(request: Request) {
     );
 
   const ip = clientIpFromHeaders(request.headers);
-  if (!(await verifyBotProtection(parsed.data.botToken, ip))) {
+  if (
+    !(await verifyBotProtection({
+      token: parsed.data.botToken,
+      ip,
+      userAgent: request.headers.get("user-agent") || "",
+      expectedAction: RECAPTCHA_ACTIONS.report,
+    }))
+  ) {
     return NextResponse.json(
       { error: "The anti-bot check could not be verified." },
       { status: 400 },

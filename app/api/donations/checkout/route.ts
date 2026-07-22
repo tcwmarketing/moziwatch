@@ -48,7 +48,10 @@ export async function POST(request: Request) {
         },
       ],
       metadata: { kind: "venture-donation" },
-      payment_intent_data: { metadata: { kind: "venture-donation" } },
+      payment_intent_data: {
+        metadata: { kind: "venture-donation" },
+        statement_descriptor_suffix: "MOZIWATCH",
+      },
     });
     if (!session.url) throw new Error("Stripe did not return a checkout URL.");
     await sqlClient`

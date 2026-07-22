@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sqlClient } from "@/db";
-import { isSameOrigin } from "@/lib/privacy";
+import { clientIpFromHeaders, isSameOrigin } from "@/lib/privacy";
+import { verifyBotProtection } from "@/lib/bot-protection";
+import { RECAPTCHA_ACTIONS } from "@/lib/recaptcha-actions";
 
 const input = z.object({
   campgroundId: z.string().uuid().optional(),
@@ -14,6 +16,7 @@ const input = z.object({
   longitude: z.coerce.number().min(-180).max(180).optional(),
   comment: z.string().trim().min(10).max(1500),
   email: z.string().trim().email().max(254).optional().or(z.literal("")),
+  botToken: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -26,6 +29,19 @@ export async function POST(request: Request) {
   if (!parsed.success)
     return NextResponse.json(
       { error: "Check the suggestion details." },
+      { status: 400 },
+    );
+  const ip = clientIpFromHeaders(request.headers);
+  if (
+    !(await verifyBotProtection({
+      token: parsed.data.botToken,
+      ip,
+      userAgent: request.headers.get("user-agent") || "",
+      expectedAction: RECAPTCHA_ACTIONS.locationSuggestion,
+    }))
+  )
+    return NextResponse.json(
+      { error: "The anti-bot check could not be verified." },
       { status: 400 },
     );
   const value = parsed.data;

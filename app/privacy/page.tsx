@@ -60,6 +60,19 @@ export default function PrivacyPage() {
         </p>
       </section>
       <section>
+        <h2>Spam and abuse protection</h2>
+        <p>
+          Public report, contact, and campground-suggestion forms use Google
+          reCAPTCHA Enterprise to assess automated abuse. Google receives the
+          generated action token and technical request information such as the
+          browser user agent and network address. Its use is governed by the{" "}
+          <a href="https://policies.google.com/privacy">
+            Google Privacy Policy
+          </a>{" "}
+          and <a href="https://policies.google.com/terms">Terms of Service</a>.
+        </p>
+      </section>
+      <section>
         <h2>Retention and deletion</h2>
         <p>
           Published reports may be retained to preserve campground history. If
@@ -72,9 +85,8 @@ export default function PrivacyPage() {
       <section>
         <h2>Questions</h2>
         <p>
-          The production operator must replace this paragraph with a monitored
-          privacy contact and jurisdiction-specific retention schedule before
-          launch.
+          Privacy questions and deletion requests can be submitted through the
+          Contact Us form. Email addresses are never published on the website.
         </p>
       </section>
     </div>

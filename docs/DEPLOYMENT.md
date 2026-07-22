@@ -44,13 +44,17 @@ routine releases remain owned and managed by `moziwatc`.
 
 ## Stripe donation checkout
 
-1. Keep `STRIPE_MODE=test` and add a Stripe `sk_test_...` key while validating donations. Change both the mode and key only when live donations are approved.
+1. Production uses `STRIPE_MODE=live` with a Stripe `sk_live_...` key. Keep `STRIPE_MODE=test` only in local or sandbox environments.
 2. In Stripe Dashboard, add an HTTPS webhook endpoint at `https://moziwatch.com/api/stripe/webhook`.
 3. Subscribe it to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, and `checkout.session.expired`.
 4. Add the endpoint signing secret as `STRIPE_WEBHOOK_SECRET`.
 5. Set `NEXT_PUBLIC_APP_URL=https://moziwatch.com` so Checkout returns to the correct production site.
 
-Use Stripe test mode first. The application accepts one-time CAD contributions from $1 through $500 and stores only payment identifiers, amount, status and the email Stripe returns; card details never enter the application.
+The application accepts one-time CAD contributions from $1 through $500 and stores only payment identifiers, amount, status and the email Stripe returns; card details never enter the application. Checkout adds the card statement suffix `MOZIWATCH`, so the brand appears on card transactions without changing the legal Stripe business name.
+
+## reCAPTCHA Enterprise
+
+Public report, contact, and campground-suggestion forms obtain a single-use score-based token with a distinct action name. The server creates an assessment through the reCAPTCHA Enterprise v1 API, verifies token validity, action, production hostname, and the configurable score threshold, then fails closed when verification is unavailable. Production requires `BOT_PROTECTION_PROVIDER=recaptcha-enterprise`, `GOOGLE_API_KEY`, `GOOGLE_CLOUD_PROJECT_ID`, and `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`. The initial `RECAPTCHA_MIN_SCORE=0.3` blocks the highest-risk score while the site-specific model learns; review production scores before tightening it.
 
 ## Production checklist
 
@@ -65,8 +69,9 @@ Use Stripe test mode first. The application accepts one-time CAD contributions f
 9. Set `TRUST_PROXY_HOPS` to the exact number of trusted reverse proxies. Leave it at zero for direct traffic.
 10. Set `CONTACT_RECIPIENT_EMAIL` to a monitored private inbox, confirm contact submissions appear in the protected Admin inbox, and obtain jurisdiction-specific privacy, terms, RIDB, BC Open Government Licence, and ODbL review.
 11. Set both `NEXT_PUBLIC_APP_URL=https://moziwatch.com` and `BETTER_AUTH_URL=https://moziwatch.com` before building. These values control canonical URLs, authentication callbacks and email links.
-12. Register the production Stripe webhook as `https://moziwatch.com/api/stripe/webhook` and store that endpoint's `whsec_...` signing secret as `STRIPE_WEBHOOK_SECRET`.
-13. After launch, submit `/sitemap.xml` in Google Search Console and monitor indexing, Core Web Vitals and crawl errors.
+12. Register the production Stripe webhook as `https://moziwatch.com/api/stripe/webhook` and store that endpoint's live-mode `whsec_...` signing secret as `STRIPE_WEBHOOK_SECRET`.
+13. Restrict the reCAPTCHA Enterprise website key to `moziwatch.com`, restrict the API key to the reCAPTCHA Enterprise API, and monitor action scores after launch.
+14. After launch, submit `/sitemap.xml` in Google Search Console and monitor indexing, Core Web Vitals and crawl errors.
 
 ## Backups and migrations
 

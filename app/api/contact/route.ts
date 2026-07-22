@@ -10,6 +10,7 @@ import {
 import { reviewSubmissionContent } from "@/lib/spam-review";
 import { toPostgresJson } from "@/lib/postgres-json";
 import { sendEmail } from "@/lib/email";
+import { RECAPTCHA_ACTIONS } from "@/lib/recaptcha-actions";
 
 const input = z.object({
   name: z.string().trim().min(1).max(80),
@@ -32,7 +33,14 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   const ip = clientIpFromHeaders(request.headers);
-  if (!(await verifyBotProtection(parsed.data.botToken, ip)))
+  if (
+    !(await verifyBotProtection({
+      token: parsed.data.botToken,
+      ip,
+      userAgent: request.headers.get("user-agent") || "",
+      expectedAction: RECAPTCHA_ACTIONS.contact,
+    }))
+  )
     return NextResponse.json(
       { error: "The anti-bot check could not be verified." },
       { status: 400 },
