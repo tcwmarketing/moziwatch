@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   authors: [{ name: "MoziWatch", url: absoluteUrl() }],
   creator: "MoziWatch",
   publisher: "MoziWatch",
+  other: {
+    "google-adsense-account": "ca-pub-8746662508326131",
+  },
   robots: {
     index: true,
     follow: true,
