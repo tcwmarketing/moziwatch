@@ -42,7 +42,40 @@ export function isSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return false;
   try {
-    return new URL(origin).host === new URL(request.url).host;
+    const requestOrigin = new URL(origin).origin.toLowerCase();
+    const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+    // In production, the public application URL is authoritative. Reverse
+    // proxies can rewrite request.url to an internal host such as 127.0.0.1,
+    // so comparing the browser Origin header to request.url rejects valid
+    // submissions after deployment.
+    if (configuredAppUrl) {
+      return requestOrigin === new URL(configuredAppUrl).origin.toLowerCase();
+    }
+
+    const trustedHops = Math.max(
+      0,
+      Math.min(5, Number(process.env.TRUST_PROXY_HOPS || 0)),
+    );
+    if (trustedHops > 0) {
+      const forwardedHost = request.headers
+        .get("x-forwarded-host")
+        ?.split(",")[0]
+        ?.trim();
+      if (forwardedHost) {
+        const forwardedProtocol =
+          request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+          "https";
+        return (
+          requestOrigin ===
+          new URL(
+            `${forwardedProtocol}://${forwardedHost}`,
+          ).origin.toLowerCase()
+        );
+      }
+    }
+
+    return requestOrigin === new URL(request.url).origin.toLowerCase();
   } catch {
     return false;
   }
