@@ -8,6 +8,7 @@ import { stripeClient } from "@/lib/stripe";
 const amountSchema = z.coerce.number().finite().min(1).max(500);
 
 export async function POST(request: Request) {
+  const wantsJson = request.headers.get("accept")?.includes("application/json");
   if (!isSameOrigin(request))
     return NextResponse.json(
       { error: "Invalid request origin." },
@@ -18,11 +19,17 @@ export async function POST(request: Request) {
   const selected = String(form.get("suggestedAmount") || "");
   const rawAmount = selected === "custom" ? form.get("customAmount") : selected;
   const parsed = amountSchema.safeParse(rawAmount);
-  if (!parsed.success)
+  if (!parsed.success) {
+    if (wantsJson)
+      return NextResponse.json(
+        { error: "Choose an amount from $1 to $500." },
+        { status: 400 },
+      );
     return NextResponse.redirect(
       new URL("/support?status=invalid", publicEnv.appUrl),
       303,
     );
+  }
 
   const amountMinor = Math.round(parsed.data * 100);
   const currency = (
@@ -60,9 +67,15 @@ export async function POST(request: Request) {
       ) VALUES (${session.id}, ${amountMinor}, ${currency}, 'pending')
       ON CONFLICT (checkout_session_id) DO NOTHING
     `;
+    if (wantsJson) return NextResponse.json({ url: session.url });
     return NextResponse.redirect(session.url, 303);
   } catch (error) {
     console.error("Donation checkout could not be created", error);
+    if (wantsJson)
+      return NextResponse.json(
+        { error: "Secure checkout is temporarily unavailable." },
+        { status: 503 },
+      );
     return NextResponse.redirect(
       new URL("/support?status=unavailable", publicEnv.appUrl),
       303,

@@ -1529,10 +1529,95 @@ details summary::-webkit-details-marker {
 .donation-form > .button {
   margin-top: 20px;
 }
-.donation-form > small {
-  display: block;
-  margin-top: 12px;
+.donation-assurances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 14px;
+}
+.donation-assurances span {
+  align-items: center;
   color: var(--ink-2);
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 6px;
+}
+.donation-assurances span::before {
+  background: var(--forest);
+  border-radius: 50%;
+  color: #fff;
+  content: "✓";
+  display: grid;
+  font-size: 0.62rem;
+  height: 18px;
+  place-items: center;
+  width: 18px;
+}
+.support-trust {
+  border-top: 1px solid var(--sand);
+  margin-top: 38px;
+  padding-top: 32px;
+}
+.support-trust h2,
+.support-founder h2 {
+  margin-top: 4px;
+}
+.support-trust-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 18px;
+}
+.support-trust-grid article {
+  background: rgba(224, 234, 223, 0.42);
+  border: 1px solid rgba(11, 75, 69, 0.12);
+  border-radius: 12px;
+  padding: 18px;
+}
+.support-trust-grid h3 {
+  font-size: 0.92rem;
+  margin: 0 0 7px;
+}
+.support-trust-grid p,
+.support-founder p {
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+.support-founder {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: auto 1fr;
+  margin-top: 24px;
+  max-width: 760px;
+}
+.support-founder-mark {
+  align-items: center;
+  background: var(--forest-dark);
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  font-size: 1.35rem;
+  font-weight: 850;
+  height: 58px;
+  justify-content: center;
+  width: 58px;
+}
+.support-founder-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-top: 14px;
+}
+.support-founder-links a {
+  color: var(--forest);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .thank-you-card {
   max-width: 700px;
@@ -2910,6 +2995,12 @@ body:has(#profile-place-search:focus) div[data-lastpass-root] {
 }
 
 @media (max-width: 760px) {
+  .support-trust-grid {
+    grid-template-columns: 1fr;
+  }
+  .support-founder {
+    grid-template-columns: 1fr;
+  }
   .contact-form-grid,
   .admin-profile-row {
     grid-template-columns: 1fr;
