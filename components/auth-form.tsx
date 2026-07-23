@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 
+const facebookSignInEnabled =
+  process.env.NEXT_PUBLIC_FACEBOOK_SIGN_IN_ENABLED === "true";
+
 function SocialIcon({ provider }: { provider: "google" | "facebook" }) {
   if (provider === "facebook")
     return (
@@ -115,14 +118,16 @@ export function AuthForm({
           <SocialIcon provider="google" />
           Continue with Google
         </button>
-        <button
-          className="button social"
-          onClick={() => social("facebook")}
-          type="button"
-        >
-          <SocialIcon provider="facebook" />
-          Continue with Facebook
-        </button>
+        {facebookSignInEnabled ? (
+          <button
+            className="button social"
+            onClick={() => social("facebook")}
+            type="button"
+          >
+            <SocialIcon provider="facebook" />
+            Continue with Facebook
+          </button>
+        ) : null}
       </div>
       <div className="or">
         <span>or use email</span>
