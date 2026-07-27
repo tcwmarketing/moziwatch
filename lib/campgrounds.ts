@@ -61,6 +61,7 @@ type CampgroundRow = {
   forecast_target_date: DatabaseDate | null;
   forecast_model_version: string | null;
   forecast_profile_kind: string | null;
+  has_active_habitat?: boolean;
 };
 
 type MapCampgroundRow = Pick<
@@ -429,7 +430,11 @@ export async function getCampgroundBySlug(slug: string) {
            f.confidence AS forecast_confidence,
            f.target_date AS forecast_target_date,
            fm.version AS forecast_model_version,
-           fpv.data_kind AS forecast_profile_kind
+           fpv.data_kind AS forecast_profile_kind,
+           EXISTS (
+             SELECT 1 FROM campground_habitat_profiles active_hp
+             WHERE active_hp.campground_id = c.id AND active_hp.active = true
+           ) AS has_active_habitat
     FROM campgrounds c
     LEFT JOIN LATERAL (
       SELECT source,

@@ -26,9 +26,24 @@ export async function GET() {
 
   let entries = staticPages;
   try {
-    const campgrounds = await sqlClient<
-      { slug: string; updated_at: Date }[]
-    >`SELECT slug, updated_at FROM campgrounds WHERE active = true`;
+    const campgrounds = await sqlClient<{ slug: string; updated_at: Date }[]>`
+      SELECT c.slug, c.updated_at
+      FROM campgrounds c
+      WHERE c.active = true
+        AND c.operational_status <> 'closed'
+        AND (
+          EXISTS (
+            SELECT 1 FROM campground_habitat_profiles hp
+            WHERE hp.campground_id = c.id AND hp.active = true
+          )
+          OR EXISTS (
+            SELECT 1 FROM reports r
+            WHERE r.campground_id = c.id
+              AND r.moderation_status = 'published'
+              AND r.deleted_at IS NULL
+          )
+        )
+    `;
     entries = [
       ...staticPages,
       ...campgrounds.map((campground) => ({

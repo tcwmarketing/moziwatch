@@ -21,6 +21,12 @@ import { ForecastInterestBeacon } from "@/components/forecast-interest-beacon";
 import { CampgroundWeatherForecast } from "@/components/campground-weather-forecast";
 import { CampgroundProducts } from "@/components/campground-products";
 import { absoluteUrl } from "@/lib/seo";
+import { getCampgroundHabitatSummary } from "@/lib/campground-habitat";
+import {
+  buildCampgroundFaq,
+  isCampgroundContentIndexable,
+} from "@/lib/campground-content";
+import { parseDatabaseDate } from "@/lib/database-date";
 
 export const dynamic = "force-dynamic";
 
@@ -34,14 +40,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const campground = await getCampgroundBySlug(slug);
     if (!campground) return {};
-    const title = `${campground.name} mosquito reports and outlook`;
-    const description = `Check recent camper mosquito reports, local weather and the approximate mosquito outlook for ${campground.name} in ${campground.city}, ${campground.region}.`;
+    const title = `${campground.name} Mosquito Conditions: Reports & Forecast`;
+    const description = `How bad are the mosquitoes at ${campground.name}? Check recent camper reports, today's weather-based forecast and local habitat factors for this campground in ${campground.city}, ${campground.region}.`;
     const canonical = absoluteUrl(`/campgrounds/${campground.slug}`);
+    const indexable = isCampgroundContentIndexable({
+      hasHabitat: Boolean(campground.has_active_habitat),
+      recentCount: campground.recent_count,
+      historicalCount: campground.historical_count,
+      forecastAvailable: campground.forecast_score !== null,
+    });
     return {
       title,
       description,
       alternates: { canonical },
       openGraph: { title, description, url: canonical, type: "website" },
+      robots: indexable ? undefined : { index: false, follow: true },
     };
   } catch {
     return { title: "Campground reports" };
@@ -61,18 +74,20 @@ export default async function CampgroundPage({ params, searchParams }: Props) {
     notFound();
   }
   const session = await auth.api.getSession({ headers: await headers() });
-  const [{ reports, distribution }, saved, outlook] = await Promise.all([
-    getCampgroundReports(campground.id),
-    session?.user
-      ? sqlClient<{ saved: boolean }[]>`
+  const [{ reports, distribution }, saved, outlook, habitat] =
+    await Promise.all([
+      getCampgroundReports(campground.id),
+      session?.user
+        ? sqlClient<{ saved: boolean }[]>`
           SELECT EXISTS(
             SELECT 1 FROM saved_campgrounds
             WHERE account_id = ${session.user.id} AND campground_id = ${campground.id}::uuid
           ) AS saved
         `
-      : Promise.resolve([]),
-    getCampgroundOutlook(campground.id),
-  ]);
+        : Promise.resolve([]),
+      getCampgroundOutlook(campground.id),
+      getCampgroundHabitatSummary(campground.id),
+    ]);
   const total = distribution.reduce((sum, item) => sum + item.count, 0);
   const todayForecast = outlook?.nights[0];
   const facilities = [
@@ -108,6 +123,32 @@ export default async function CampgroundPage({ params, searchParams }: Props) {
         ),
     )
     .join(", ");
+  const fallbackForecast =
+    campground.forecast_score !== null && campground.forecast_level
+      ? {
+          targetDate:
+            (campground.forecast_target_date
+              ? parseDatabaseDate(campground.forecast_target_date).toISOString()
+              : null) || new Date().toISOString(),
+          score: campground.forecast_score,
+          level: campground.forecast_level,
+          confidence: campground.forecast_confidence || 0,
+        }
+      : null;
+  const faqItems = buildCampgroundFaq({
+    name: campground.name,
+    slug: campground.slug,
+    city: campground.city,
+    region: campground.region,
+    recentAverage: campground.recent_average,
+    recentCount: campground.recent_count,
+    historicalAverage: campground.historical_average,
+    historicalCount: campground.historical_count,
+    forecast: todayForecast || fallbackForecast,
+    forecastNights:
+      outlook?.nights || (fallbackForecast ? [fallbackForecast] : []),
+    habitat,
+  });
   const campgroundJsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -353,6 +394,33 @@ export default async function CampgroundPage({ params, searchParams }: Props) {
           <AdsenseUnit className="adsense-sidebar" format="rectangle" />
         </aside>
       </div>
+      <section
+        className="campground-faq"
+        aria-labelledby="campground-faq-heading"
+      >
+        <p className="eyebrow">Campground mosquito questions</p>
+        <h2 id="campground-faq-heading">
+          What campers should know about mosquitoes at {campground.name}
+        </h2>
+        <p className="campground-faq-intro">
+          {habitat
+            ? "These answers combine this campground's published camper reports, current outlook and mapped surroundings. They are specific to this location and update as new reports and forecasts become available."
+            : "These answers explain what is currently known from published reports, the weather display and available location data. A complete habitat profile is not yet available, so the page identifies those limits instead of filling the gaps with assumptions."}
+        </p>
+        <div className="campground-faq-grid">
+          {faqItems.map((item) => (
+            <article key={item.question}>
+              <h3>{item.question}</h3>
+              <p>{item.answer}</p>
+            </article>
+          ))}
+        </div>
+        <p className="campground-faq-note">
+          Camper reports describe observed conditions. Forecasts are approximate
+          modeled guidance and may vary between individual campsites, trails and
+          times of day.
+        </p>
+      </section>
     </div>
   );
 }
