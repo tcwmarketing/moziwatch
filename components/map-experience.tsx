@@ -9,7 +9,7 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 import { MARKER_STATES } from "@/config/ratings";
-import { FORECAST_RING_MIN_ZOOM } from "@/config/forecast-display";
+import { FORECAST_BORDER_MIN_ZOOM } from "@/config/forecast-display";
 import { requiresCooperativeMapGestures } from "@/lib/map-interactions";
 import { mapViewportCovers, type MapViewport } from "@/lib/map-query";
 import { ReportForm } from "./report-form";
@@ -225,32 +225,6 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
           paint: { "text-color": "#fff" },
         });
         map.addLayer({
-          id: "campground-forecast-rings",
-          type: "circle",
-          source: "campgrounds",
-          minzoom: FORECAST_RING_MIN_ZOOM,
-          filter: [
-            "all",
-            ["!", ["has", "point_count"]],
-            ["==", ["get", "forecast_available"], true],
-          ],
-          paint: {
-            "circle-color": "rgba(0, 0, 0, 0)",
-            "circle-radius": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              FORECAST_RING_MIN_ZOOM,
-              15,
-              16,
-              18,
-            ],
-            "circle-stroke-color": ["get", "forecast_color"],
-            "circle-stroke-width": 3,
-            "circle-opacity": 0.82,
-          },
-        });
-        map.addLayer({
           id: "campground-markers",
           type: "circle",
           source: "campgrounds",
@@ -266,8 +240,26 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
               10,
               11,
             ],
-            "circle-stroke-color": "#fff",
-            "circle-stroke-width": 2,
+            "circle-stroke-color": [
+              "case",
+              [
+                "all",
+                [">=", ["zoom"], FORECAST_BORDER_MIN_ZOOM],
+                ["==", ["get", "forecast_available"], true],
+              ],
+              ["get", "forecast_color"],
+              "#ffffff",
+            ],
+            "circle-stroke-width": [
+              "case",
+              [
+                "all",
+                [">=", ["zoom"], FORECAST_BORDER_MIN_ZOOM],
+                ["==", ["get", "forecast_available"], true],
+              ],
+              4,
+              1.5,
+            ],
           },
         });
         map.on("click", "campground-markers", (event: MapLayerMouseEvent) => {
@@ -645,9 +637,12 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
             </span>
           ))}
         </div>
-        <p className="forecast-ring-legend">
+        <p className="forecast-border-legend">
           <i aria-hidden="true" />
-          <small>Outer ring: today&apos;s forecast at local zoom</small>
+          <small>
+            Colored border: today&apos;s forecast at local zoom. No colored
+            border means unavailable.
+          </small>
         </p>
       </div>
       {selected ? (
@@ -706,7 +701,7 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
               <p>No campground-specific outlook is available yet.</p>
             )}
             <small>
-              Outer ring = modeled forecast. Marker fill = camper reports.
+              Colored border = modeled forecast. Marker fill = camper reports.
             </small>
           </div>
           <p className="recent-line">

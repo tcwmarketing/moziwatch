@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ForecastCard } from "@/components/forecast-card";
 import {
-  FORECAST_RING_MIN_ZOOM,
+  FORECAST_BORDER_MIN_ZOOM,
   forecastDisplayState,
   forecastDisplayStateForScore,
 } from "@/config/forecast-display";
@@ -33,7 +33,18 @@ describe("forecast presentation", () => {
     expect(markup).not.toContain("reports");
   });
 
-  it("keeps forecast rings at local zoom", () => {
-    expect(FORECAST_RING_MIN_ZOOM).toBeGreaterThan(8);
+  it("renders an unavailable forecast with a neutral state", () => {
+    const markup = renderToStaticMarkup(
+      <ForecastCard score={null} level={null} confidence={null} />,
+    );
+
+    expect(markup).toContain("forecast-card-unavailable");
+    expect(markup).toContain("--forecast-color:#7B8580");
+    expect(markup).toContain("No current modeled forecast");
+    expect(markup).not.toContain("--forecast-color:#E9A617");
+  });
+
+  it("keeps forecast borders at local zoom", () => {
+    expect(FORECAST_BORDER_MIN_ZOOM).toBeGreaterThan(8);
   });
 });

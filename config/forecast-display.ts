@@ -1,4 +1,4 @@
-export const FORECAST_RING_MIN_ZOOM = 9;
+export const FORECAST_BORDER_MIN_ZOOM = 9;
 
 const FORECAST_DISPLAY_STATES = [
   { maximum: 0.15, label: "None or minimal", color: "#2F7D58" },

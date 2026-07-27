@@ -12,7 +12,7 @@ Map requests are bounded to the visible viewport and include the current zoom. A
 
 - Campground marker fill uses only the Recent published camper-report rating.
 - Modeled forecast score, confidence, and factors live in separate forecast tables and properties.
-- Today's modeled forecast appears as a separate thin outer ring at local zoom after clusters expand. It never changes the report-colored marker fill.
+- Today's modeled forecast appears as a colored marker border at local zoom after clusters expand. A thin white border is only a visual marker boundary and means no forecast is available. The forecast border never changes the report-colored marker fill.
 - The former continent-wide point heatmap is not loaded or rendered.
 - The checked-in model is an expert-configured beta prototype, has `usesUserReports=false`, and is not represented as trained.
 - A partial or failed daily run never becomes published.

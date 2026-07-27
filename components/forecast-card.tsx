@@ -20,7 +20,7 @@ export function ForecastCard({
 
   return (
     <article
-      className="rating-card forecast-card"
+      className={`rating-card forecast-card${available ? "" : " forecast-card-unavailable"}`}
       style={{ "--forecast-color": state.color } as CSSProperties}
     >
       <p>Today&apos;s forecast</p>
@@ -34,9 +34,11 @@ export function ForecastCard({
           : `${Math.round(normalizedScore * 100)}/100`}
       </span>
       <small>
-        {normalizedConfidence === null
-          ? "Modeled outlook, not a camper rating"
-          : `${Math.round(normalizedConfidence * 100)}% confidence · modeled outlook`}
+        {!available
+          ? "No current modeled forecast"
+          : normalizedConfidence === null
+            ? "Modeled outlook, not a camper rating"
+            : `${Math.round(normalizedConfidence * 100)}% confidence · modeled outlook`}
       </small>
     </article>
   );

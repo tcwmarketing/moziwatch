@@ -1,7 +1,7 @@
 import { sqlClient } from "@/db";
 
 try {
-  const [runs, schedules, database] = await Promise.all([
+  const [runs, schedules, database, coverage] = await Promise.all([
     sqlClient`
       WITH recent_runs AS MATERIALIZED (
         SELECT fr.id, fm.version, fr.forecast_date, fr.status,
@@ -48,10 +48,66 @@ try {
         current_setting('default_transaction_read_only') AS default_read_only,
         pg_is_in_recovery() AS in_recovery
     `,
+    sqlClient`
+      WITH capacity AS (
+        SELECT DISTINCT ON (campground_id)
+          campground_id, campsite_count
+        FROM location_source_records
+        WHERE campsite_count IS NOT NULL
+        ORDER BY campground_id,
+          CASE campsite_count_kind
+            WHEN 'official_total' THEN 3
+            WHEN 'reservable_inventory' THEN 2
+            ELSE 1
+          END DESC,
+          authoritative DESC, source_priority DESC
+      ), current_forecast AS (
+        SELECT DISTINCT forecasts.campground_id
+        FROM campground_forecasts forecasts
+        JOIN forecast_runs runs ON runs.id = forecasts.run_id
+        WHERE forecasts.target_date = CURRENT_DATE
+          AND runs.status = 'published'
+          AND runs.is_production = true
+      )
+      SELECT
+        count(*)::int AS profiled_campgrounds,
+        count(*) FILTER (
+          WHERE current_forecast.campground_id IS NOT NULL
+        )::int AS forecast_available,
+        count(*) FILTER (
+          WHERE coalesce(capacity.campsite_count, 0) >= 50
+        )::int AS major_profiled,
+        count(*) FILTER (
+          WHERE coalesce(capacity.campsite_count, 0) >= 50
+            AND current_forecast.campground_id IS NOT NULL
+        )::int AS major_forecast_available,
+        count(*) FILTER (
+          WHERE coalesce(capacity.campsite_count, 0) < 50
+        )::int AS minor_profiled,
+        count(*) FILTER (
+          WHERE coalesce(capacity.campsite_count, 0) < 50
+            AND current_forecast.campground_id IS NOT NULL
+        )::int AS minor_forecast_available
+      FROM campgrounds campgrounds
+      JOIN campground_habitat_profiles profiles
+        ON profiles.campground_id = campgrounds.id
+        AND profiles.active = true
+      LEFT JOIN capacity ON capacity.campground_id = campgrounds.id
+      LEFT JOIN current_forecast
+        ON current_forecast.campground_id = campgrounds.id
+      WHERE campgrounds.active = true
+        AND campgrounds.country IN ('CA', 'US')
+    `,
   ]);
   console.log(
     JSON.stringify(
-      { checkedAt: new Date().toISOString(), database, runs, schedules },
+      {
+        checkedAt: new Date().toISOString(),
+        database,
+        coverage,
+        runs,
+        schedules,
+      },
       null,
       2,
     ),

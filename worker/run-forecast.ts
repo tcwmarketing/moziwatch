@@ -201,7 +201,16 @@ async function registerRun(
       ${production}, ${mode}
     )
     ON CONFLICT (model_id, forecast_date) DO UPDATE SET
-      status = 'running', error = NULL, generated_at = NULL,
+      status = CASE
+        WHEN forecast_runs.status = 'published'::forecast_run_status
+          THEN 'published'::forecast_run_status
+        ELSE 'running'::forecast_run_status
+      END,
+      error = NULL,
+      generated_at = CASE
+        WHEN forecast_runs.status = 'published' THEN forecast_runs.generated_at
+        ELSE NULL
+      END,
       is_production = excluded.is_production,
       deployment_mode = excluded.deployment_mode
     RETURNING id
@@ -890,7 +899,16 @@ try {
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   for (const runId of runs.values()) {
-    await sqlClient`UPDATE forecast_runs SET status = 'failed', error = ${message} WHERE id = ${runId}::uuid`;
+    await sqlClient`
+      UPDATE forecast_runs SET
+        status = CASE
+          WHEN status = 'published'::forecast_run_status
+            THEN 'published'::forecast_run_status
+          ELSE 'failed'::forecast_run_status
+        END,
+        error = ${message}
+      WHERE id = ${runId}::uuid
+    `;
     await sqlClient`INSERT INTO forecast_job_logs (run_id, level, message) VALUES (${runId}::uuid, 'error', ${message})`;
   }
   throw error;
