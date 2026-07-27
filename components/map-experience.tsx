@@ -9,6 +9,7 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 import { MARKER_STATES } from "@/config/ratings";
+import { FORECAST_RING_MIN_ZOOM } from "@/config/forecast-display";
 import { requiresCooperativeMapGestures } from "@/lib/map-interactions";
 import { mapViewportCovers, type MapViewport } from "@/lib/map-query";
 import { ReportForm } from "./report-form";
@@ -222,6 +223,32 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
             "text-font": ["Noto Sans Regular"],
           },
           paint: { "text-color": "#fff" },
+        });
+        map.addLayer({
+          id: "campground-forecast-rings",
+          type: "circle",
+          source: "campgrounds",
+          minzoom: FORECAST_RING_MIN_ZOOM,
+          filter: [
+            "all",
+            ["!", ["has", "point_count"]],
+            ["==", ["get", "forecast_available"], true],
+          ],
+          paint: {
+            "circle-color": "rgba(0, 0, 0, 0)",
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              FORECAST_RING_MIN_ZOOM,
+              15,
+              16,
+              18,
+            ],
+            "circle-stroke-color": ["get", "forecast_color"],
+            "circle-stroke-width": 3,
+            "circle-opacity": 0.82,
+          },
         });
         map.addLayer({
           id: "campground-markers",
@@ -485,6 +512,7 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
         forecast_score: properties.forecast_score,
         forecast_level: properties.forecast_level,
         forecast_confidence: properties.forecast_confidence,
+        forecast_color: properties.forecast_color,
       };
     }
 
@@ -617,6 +645,10 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
             </span>
           ))}
         </div>
+        <p className="forecast-ring-legend">
+          <i aria-hidden="true" />
+          <small>Outer ring: today&apos;s forecast at local zoom</small>
+        </p>
       </div>
       {selected ? (
         <aside
@@ -658,14 +690,14 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
           ) : null}
           <p className="severity-line">
             <i style={{ background: String(selected.marker_color) }} />
-            Current marker: {selected.severity_label}
+            Recent camper reports: {selected.severity_label}
           </p>
           <div className="forecast-sheet-summary">
-            <p className="eyebrow">Mosquito outlook</p>
+            <p className="eyebrow">Today&apos;s mosquito forecast</p>
             {selected.forecast_score !== null &&
             selected.forecast_score !== undefined ? (
               <p>
-                <strong>{selected.forecast_level}</strong> tonight ·{" "}
+                <strong>{selected.forecast_level}</strong> today ·{" "}
                 {Math.round(Number(selected.forecast_score) * 100)}
                 /100 · {Math.round(Number(selected.forecast_confidence) * 100)}%
                 confidence
@@ -674,7 +706,7 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
               <p>No campground-specific outlook is available yet.</p>
             )}
             <small>
-              Modeled outlooks never change the report-colored marker.
+              Outer ring = modeled forecast. Marker fill = camper reports.
             </small>
           </div>
           <p className="recent-line">

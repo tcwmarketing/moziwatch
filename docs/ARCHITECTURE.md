@@ -10,9 +10,9 @@ Map requests are bounded to the visible viewport and include the current zoom. A
 
 ## Information boundaries
 
-- Campground marker fill uses only published camper reports for the selected Past 30 Days or Historical period.
+- Campground marker fill uses only the Recent published camper-report rating.
 - Modeled forecast score, confidence, and factors live in separate forecast tables and properties.
-- Forecast halos are a separate layer behind markers, are hidden below a 0.30 score, and appear only at local zoom after clusters expand.
+- Today's modeled forecast appears as a separate thin outer ring at local zoom after clusters expand. It never changes the report-colored marker fill.
 - The former continent-wide point heatmap is not loaded or rendered.
 - The checked-in model is an expert-configured beta prototype, has `usesUserReports=false`, and is not represented as trained.
 - A partial or failed daily run never becomes published.

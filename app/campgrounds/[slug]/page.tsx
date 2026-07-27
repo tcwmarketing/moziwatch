@@ -9,6 +9,7 @@ import {
 import { publicEnv } from "@/lib/env";
 import { CampgroundMiniMap } from "@/components/campground-mini-map";
 import { RatingCard } from "@/components/rating-card";
+import { ForecastCard } from "@/components/forecast-card";
 import { ReportForm } from "@/components/report-form";
 import { markerStateForAverage, ratingLabel } from "@/config/ratings";
 import { CampgroundActions } from "@/components/campground-actions";
@@ -73,6 +74,7 @@ export default async function CampgroundPage({ params, searchParams }: Props) {
     getCampgroundOutlook(campground.id),
   ]);
   const total = distribution.reduce((sum, item) => sum + item.count, 0);
+  const todayForecast = outlook?.nights[0];
   const facilities = [
     ...new Set(
       (campground.facility_values || []).filter(
@@ -193,10 +195,12 @@ export default async function CampgroundPage({ params, searchParams }: Props) {
             average={campground.recent_average}
             count={campground.recent_count}
           />
-          <RatingCard
-            title="Historical"
-            average={campground.historical_average}
-            count={campground.historical_count}
+          <ForecastCard
+            score={todayForecast?.score ?? campground.forecast_score}
+            level={todayForecast?.level ?? campground.forecast_level}
+            confidence={
+              todayForecast?.confidence ?? campground.forecast_confidence
+            }
           />
         </div>
       </header>

@@ -390,6 +390,18 @@ a:focus-visible {
 .map-legend small {
   color: var(--ink-2);
 }
+.forecast-ring-legend {
+  padding-top: 7px;
+  border-top: 1px solid rgba(23, 52, 45, 0.12);
+}
+.forecast-ring-legend i {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--gold);
+  border-radius: 50%;
+  background: transparent;
+  box-sizing: border-box;
+}
 .forecast-directory-link {
   display: inline-block;
   margin-top: 4px;
@@ -953,6 +965,20 @@ details summary::-webkit-details-marker {
 .rating-card small {
   font-size: 0.68rem;
   margin-top: 4px;
+}
+.forecast-card {
+  border: 2px solid var(--gold);
+  background: rgba(247, 243, 222, 0.62);
+}
+.forecast-card i {
+  width: 17px;
+  height: 17px;
+  border: 3px solid var(--forecast-color);
+  background: transparent;
+  box-sizing: border-box;
+}
+.forecast-card span {
+  color: var(--forest);
 }
 .campground-layout {
   display: grid;

@@ -1,5 +1,6 @@
 import { sqlClient } from "@/db";
 import { markerStateForAverage } from "@/config/ratings";
+import { forecastDisplayState } from "@/config/forecast-display";
 import {
   MAP_CLUSTER_MAX_ZOOM,
   mapClusterCellSizeDegrees,
@@ -125,6 +126,10 @@ function toMapFeatures(rows: MapCampgroundRow[], period: RatingPeriod) {
     const selectedAverage =
       period === "recent" ? row.recent_average : row.historical_average;
     const marker = markerStateForAverage(selectedAverage);
+    const forecast = forecastDisplayState(
+      row.forecast_score,
+      row.forecast_level,
+    );
     return {
       type: "Feature" as const,
       geometry: {
@@ -145,6 +150,8 @@ function toMapFeatures(rows: MapCampgroundRow[], period: RatingPeriod) {
         forecast_score: row.forecast_score,
         forecast_level: row.forecast_level,
         forecast_confidence: row.forecast_confidence,
+        forecast_available: row.forecast_score !== null,
+        forecast_color: forecast.color,
         selected_period: period,
         selected_average: selectedAverage,
         selected_count:
@@ -179,6 +186,10 @@ function toFeatures(rows: CampgroundRow[], period: RatingPeriod) {
     const selectedAverage =
       period === "recent" ? row.recent_average : row.historical_average;
     const marker = markerStateForAverage(selectedAverage);
+    const forecast = forecastDisplayState(
+      row.forecast_score,
+      row.forecast_level,
+    );
     const facilities = [
       ...new Set(
         (facilityValues || []).filter(
@@ -207,6 +218,8 @@ function toFeatures(rows: CampgroundRow[], period: RatingPeriod) {
         severity_key: marker.key,
         severity_label: marker.label,
         marker_color: marker.color,
+        forecast_available: row.forecast_score !== null,
+        forecast_color: forecast.color,
         most_recent_report_at: row.most_recent_report_at
           ? parseDatabaseDate(row.most_recent_report_at).toISOString()
           : null,
