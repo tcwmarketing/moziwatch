@@ -8,7 +8,7 @@ export const FORECAST_DISPLAY_STATES = [
 
 export const UNAVAILABLE_FORECAST_STATE = {
   label: "Unavailable",
-  color: "#7B8580",
+  color: "#D9DEDB",
 } as const;
 
 export const FORECAST_MARKER_COLORS = [

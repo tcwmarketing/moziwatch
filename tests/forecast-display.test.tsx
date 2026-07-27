@@ -40,25 +40,25 @@ describe("forecast presentation", () => {
     );
 
     expect(markup).toContain("forecast-card-unavailable");
-    expect(markup).toContain("--forecast-color:#7B8580");
+    expect(markup).toContain("--forecast-color:#D9DEDB");
     expect(markup).toContain("No current modeled forecast");
     expect(markup).not.toContain("--forecast-color:#E9A617");
   });
 
   it("creates a stable split marker image ID", () => {
-    expect(splitMarkerImageId("#7B8580", "#B88600")).toBe(
-      "campground-split-7B8580-B88600",
+    expect(splitMarkerImageId("#D9DEDB", "#B88600")).toBe(
+      "campground-split-D9DEDB-B88600",
     );
   });
 
   it("renders reports on the left and forecasts on the right", () => {
-    const image = createSplitMarkerImage("#7B8580", "#B88600");
+    const image = createSplitMarkerImage("#D9DEDB", "#B88600");
     const pixel = (x: number, y: number) => {
       const offset = (y * image.width + x) * 4;
       return Array.from(image.data.slice(offset, offset + 4));
     };
 
-    expect(pixel(12, 24)).toEqual([123, 133, 128, 255]);
+    expect(pixel(12, 24)).toEqual([217, 222, 219, 255]);
     expect(pixel(36, 24)).toEqual([184, 134, 0, 255]);
     expect(pixel(23, 24)).toEqual([255, 255, 255, 255]);
     expect(pixel(0, 0)).toEqual([0, 0, 0, 0]);

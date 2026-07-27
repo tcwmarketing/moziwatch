@@ -14,7 +14,7 @@ export const MARKER_STATES = [
     label: "No recent reports",
     min: null,
     max: null,
-    color: "#7B8580",
+    color: "#D9DEDB",
   },
   {
     key: "low",
