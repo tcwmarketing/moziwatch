@@ -9,7 +9,10 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 import { MARKER_STATES } from "@/config/ratings";
-import { FORECAST_BORDER_MIN_ZOOM } from "@/config/forecast-display";
+import {
+  FORECAST_BORDER_COLOR_EXPRESSION,
+  FORECAST_BORDER_WIDTH_EXPRESSION,
+} from "@/config/forecast-display";
 import { requiresCooperativeMapGestures } from "@/lib/map-interactions";
 import { mapViewportCovers, type MapViewport } from "@/lib/map-query";
 import { ReportForm } from "./report-form";
@@ -240,26 +243,8 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
               10,
               11,
             ],
-            "circle-stroke-color": [
-              "case",
-              [
-                "all",
-                [">=", ["zoom"], FORECAST_BORDER_MIN_ZOOM],
-                ["==", ["get", "forecast_available"], true],
-              ],
-              ["get", "forecast_color"],
-              "#ffffff",
-            ],
-            "circle-stroke-width": [
-              "case",
-              [
-                "all",
-                [">=", ["zoom"], FORECAST_BORDER_MIN_ZOOM],
-                ["==", ["get", "forecast_available"], true],
-              ],
-              4,
-              1.5,
-            ],
+            "circle-stroke-color": FORECAST_BORDER_COLOR_EXPRESSION,
+            "circle-stroke-width": FORECAST_BORDER_WIDTH_EXPRESSION,
           },
         });
         map.on("click", "campground-markers", (event: MapLayerMouseEvent) => {

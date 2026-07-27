@@ -1,4 +1,27 @@
+import type { ExpressionSpecification } from "maplibre-gl";
+
 export const FORECAST_BORDER_MIN_ZOOM = 9;
+
+export const FORECAST_BORDER_COLOR_EXPRESSION = [
+  "step",
+  ["zoom"],
+  "#ffffff",
+  FORECAST_BORDER_MIN_ZOOM,
+  [
+    "case",
+    ["==", ["get", "forecast_available"], true],
+    ["get", "forecast_color"],
+    "#ffffff",
+  ],
+] as ExpressionSpecification;
+
+export const FORECAST_BORDER_WIDTH_EXPRESSION = [
+  "step",
+  ["zoom"],
+  1.5,
+  FORECAST_BORDER_MIN_ZOOM,
+  ["case", ["==", ["get", "forecast_available"], true], 4, 1.5],
+] as ExpressionSpecification;
 
 const FORECAST_DISPLAY_STATES = [
   { maximum: 0.15, label: "None or minimal", color: "#2F7D58" },

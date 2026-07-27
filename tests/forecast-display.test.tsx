@@ -1,8 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { ForecastCard } from "@/components/forecast-card";
 import {
+  FORECAST_BORDER_COLOR_EXPRESSION,
   FORECAST_BORDER_MIN_ZOOM,
+  FORECAST_BORDER_WIDTH_EXPRESSION,
   forecastDisplayState,
   forecastDisplayStateForScore,
 } from "@/config/forecast-display";
@@ -46,5 +49,31 @@ describe("forecast presentation", () => {
 
   it("keeps forecast borders at local zoom", () => {
     expect(FORECAST_BORDER_MIN_ZOOM).toBeGreaterThan(8);
+  });
+
+  it("uses MapLibre-valid marker paint expressions", () => {
+    const errors = validateStyleMin({
+      version: 8,
+      sources: {
+        campgrounds: {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        },
+      },
+      layers: [
+        {
+          id: "campground-markers",
+          type: "circle",
+          source: "campgrounds",
+          paint: {
+            "circle-color": ["get", "marker_color"],
+            "circle-stroke-color": FORECAST_BORDER_COLOR_EXPRESSION,
+            "circle-stroke-width": FORECAST_BORDER_WIDTH_EXPRESSION,
+          },
+        },
+      ],
+    });
+
+    expect(errors.map((error) => error.message)).toEqual([]);
   });
 });
