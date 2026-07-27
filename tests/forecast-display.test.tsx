@@ -3,12 +3,10 @@ import { describe, expect, it } from "vitest";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { ForecastCard } from "@/components/forecast-card";
 import {
-  FORECAST_BORDER_COLOR_EXPRESSION,
-  FORECAST_BORDER_MIN_ZOOM,
-  FORECAST_BORDER_WIDTH_EXPRESSION,
   forecastDisplayState,
   forecastDisplayStateForScore,
 } from "@/config/forecast-display";
+import { createSplitMarkerImage, splitMarkerImageId } from "@/lib/map-marker";
 
 describe("forecast presentation", () => {
   it("maps the provisional risk score to a separate forecast display state", () => {
@@ -47,11 +45,26 @@ describe("forecast presentation", () => {
     expect(markup).not.toContain("--forecast-color:#E9A617");
   });
 
-  it("keeps forecast borders at local zoom", () => {
-    expect(FORECAST_BORDER_MIN_ZOOM).toBeGreaterThan(8);
+  it("creates a stable split marker image ID", () => {
+    expect(splitMarkerImageId("#7B8580", "#B88600")).toBe(
+      "campground-split-7B8580-B88600",
+    );
   });
 
-  it("uses MapLibre-valid marker paint expressions", () => {
+  it("renders reports on the left and forecasts on the right", () => {
+    const image = createSplitMarkerImage("#7B8580", "#B88600");
+    const pixel = (x: number, y: number) => {
+      const offset = (y * image.width + x) * 4;
+      return Array.from(image.data.slice(offset, offset + 4));
+    };
+
+    expect(pixel(12, 24)).toEqual([123, 133, 128, 255]);
+    expect(pixel(36, 24)).toEqual([184, 134, 0, 255]);
+    expect(pixel(23, 24)).toEqual([255, 255, 255, 255]);
+    expect(pixel(0, 0)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("uses a MapLibre-valid split marker symbol layer", () => {
     const errors = validateStyleMin({
       version: 8,
       sources: {
@@ -63,12 +76,12 @@ describe("forecast presentation", () => {
       layers: [
         {
           id: "campground-markers",
-          type: "circle",
+          type: "symbol",
           source: "campgrounds",
-          paint: {
-            "circle-color": ["get", "marker_color"],
-            "circle-stroke-color": FORECAST_BORDER_COLOR_EXPRESSION,
-            "circle-stroke-width": FORECAST_BORDER_WIDTH_EXPRESSION,
+          layout: {
+            "icon-image": ["get", "split_marker_id"],
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true,
           },
         },
       ],

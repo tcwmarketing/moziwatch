@@ -9,10 +9,8 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 import { MARKER_STATES } from "@/config/ratings";
-import {
-  FORECAST_BORDER_COLOR_EXPRESSION,
-  FORECAST_BORDER_WIDTH_EXPRESSION,
-} from "@/config/forecast-display";
+import { FORECAST_MARKER_COLORS } from "@/config/forecast-display";
+import { createSplitMarkerImage, splitMarkerImageId } from "@/lib/map-marker";
 import { requiresCooperativeMapGestures } from "@/lib/map-interactions";
 import { mapViewportCovers, type MapViewport } from "@/lib/map-query";
 import { ReportForm } from "./report-form";
@@ -191,6 +189,21 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
         }),
       );
       map.on("load", async () => {
+        for (const reportState of MARKER_STATES) {
+          for (const forecastColor of FORECAST_MARKER_COLORS) {
+            const imageId = splitMarkerImageId(
+              reportState.color,
+              forecastColor,
+            );
+            if (!map.hasImage(imageId)) {
+              map.addImage(
+                imageId,
+                createSplitMarkerImage(reportState.color, forecastColor),
+                { pixelRatio: 2 },
+              );
+            }
+          }
+        }
         map.addSource("campgrounds", {
           type: "geojson",
           data: emptyCollection,
@@ -229,22 +242,24 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
         });
         map.addLayer({
           id: "campground-markers",
-          type: "circle",
+          type: "symbol",
           source: "campgrounds",
           filter: ["!", ["has", "point_count"]],
-          paint: {
-            "circle-color": ["get", "marker_color"],
-            "circle-radius": [
+          layout: {
+            "icon-image": ["get", "split_marker_id"],
+            "icon-size": [
               "interpolate",
               ["linear"],
               ["zoom"],
               3,
-              7,
+              0.8,
+              8,
+              1,
               10,
-              11,
+              1.15,
             ],
-            "circle-stroke-color": FORECAST_BORDER_COLOR_EXPRESSION,
-            "circle-stroke-width": FORECAST_BORDER_WIDTH_EXPRESSION,
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true,
           },
         });
         map.on("click", "campground-markers", (event: MapLayerMouseEvent) => {
@@ -622,11 +637,11 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
             </span>
           ))}
         </div>
-        <p className="forecast-border-legend">
+        <p className="split-marker-legend">
           <i aria-hidden="true" />
           <small>
-            Colored border: today&apos;s forecast at local zoom. No colored
-            border means unavailable.
+            Split markers: left half is recent camper reports; right half is
+            today&apos;s forecast. Gray means unavailable.
           </small>
         </p>
       </div>
@@ -686,7 +701,8 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
               <p>No campground-specific outlook is available yet.</p>
             )}
             <small>
-              Colored border = modeled forecast. Marker fill = camper reports.
+              Left half of the map marker = camper reports. Right half = modeled
+              forecast.
             </small>
           </div>
           <p className="recent-line">

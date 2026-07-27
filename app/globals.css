@@ -390,17 +390,19 @@ a:focus-visible {
 .map-legend small {
   color: var(--ink-2);
 }
-.forecast-border-legend {
+.split-marker-legend {
   padding-top: 7px;
   border-top: 1px solid rgba(23, 52, 45, 0.12);
 }
-.forecast-border-legend i {
-  width: 14px;
-  height: 14px;
-  border: 3px solid var(--gold);
+.split-marker-legend i {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
   border-radius: 50%;
-  background: transparent;
+  background: linear-gradient(90deg, #7b8580 0 48%, #fff 48% 52%, #b88600 52%);
   box-sizing: border-box;
+  box-shadow: 0 0 0 1px rgba(11, 75, 69, 0.28);
 }
 .forecast-directory-link {
   display: inline-block;

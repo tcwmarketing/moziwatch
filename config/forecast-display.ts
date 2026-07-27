@@ -1,29 +1,4 @@
-import type { ExpressionSpecification } from "maplibre-gl";
-
-export const FORECAST_BORDER_MIN_ZOOM = 9;
-
-export const FORECAST_BORDER_COLOR_EXPRESSION = [
-  "step",
-  ["zoom"],
-  "#ffffff",
-  FORECAST_BORDER_MIN_ZOOM,
-  [
-    "case",
-    ["==", ["get", "forecast_available"], true],
-    ["get", "forecast_color"],
-    "#ffffff",
-  ],
-] as ExpressionSpecification;
-
-export const FORECAST_BORDER_WIDTH_EXPRESSION = [
-  "step",
-  ["zoom"],
-  1.5,
-  FORECAST_BORDER_MIN_ZOOM,
-  ["case", ["==", ["get", "forecast_available"], true], 4, 1.5],
-] as ExpressionSpecification;
-
-const FORECAST_DISPLAY_STATES = [
+export const FORECAST_DISPLAY_STATES = [
   { maximum: 0.15, label: "None or minimal", color: "#2F7D58" },
   { maximum: 0.35, label: "Light", color: "#6F8F3D" },
   { maximum: 0.55, label: "Moderate", color: "#B88600" },
@@ -31,10 +6,15 @@ const FORECAST_DISPLAY_STATES = [
   { maximum: 1, label: "Severe", color: "#8F2D2D" },
 ] as const;
 
-const UNAVAILABLE_FORECAST_STATE = {
+export const UNAVAILABLE_FORECAST_STATE = {
   label: "Unavailable",
   color: "#7B8580",
 } as const;
+
+export const FORECAST_MARKER_COLORS = [
+  ...FORECAST_DISPLAY_STATES.map((state) => state.color),
+  UNAVAILABLE_FORECAST_STATE.color,
+] as const;
 
 export function forecastDisplayStateForScore(score: number | null) {
   return forecastDisplayState(score, null);

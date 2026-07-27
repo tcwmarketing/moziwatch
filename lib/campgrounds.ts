@@ -1,6 +1,7 @@
 import { sqlClient } from "@/db";
 import { markerStateForAverage } from "@/config/ratings";
 import { forecastDisplayState } from "@/config/forecast-display";
+import { splitMarkerImageId } from "@/lib/map-marker";
 import {
   MAP_CLUSTER_MAX_ZOOM,
   mapClusterCellSizeDegrees,
@@ -159,6 +160,7 @@ function toMapFeatures(rows: MapCampgroundRow[], period: RatingPeriod) {
         severity_key: marker.key,
         severity_label: marker.label,
         marker_color: marker.color,
+        split_marker_id: splitMarkerImageId(marker.color, forecast.color),
       },
     };
   });
@@ -220,6 +222,7 @@ function toFeatures(rows: CampgroundRow[], period: RatingPeriod) {
         marker_color: marker.color,
         forecast_available: row.forecast_score !== null,
         forecast_color: forecast.color,
+        split_marker_id: splitMarkerImageId(marker.color, forecast.color),
         most_recent_report_at: row.most_recent_report_at
           ? parseDatabaseDate(row.most_recent_report_at).toISOString()
           : null,
