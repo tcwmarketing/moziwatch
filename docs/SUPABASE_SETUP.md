@@ -24,7 +24,7 @@ Optional forecast settings:
 - Variable `OPEN_METEO_BASE_URL` for a commercial or self-hosted endpoint.
 - Variable `FORECAST_MODEL_MODE`; leave it unset or set `v3-shadow` until shadow review is complete.
 
-The `Daily mosquito forecast` workflow runs at 05:15 UTC and can also be started manually from the Actions tab. It safely performs no publication while `DATABASE_URL` is absent.
+The `Staggered mosquito forecast` workflow runs a maximum of 200 prioritized campgrounds at minute 17 of every hour and can also be started manually from the Actions tab. Set the optional repository variable `FORECAST_HOURLY_TARGET_COUNT` only when measured provider and database capacity justify a different cap. The separate `Daily forecast maintenance` workflow runs at 04:47 UTC to refresh cadence, report-summary phrases and retention without repeating those database-wide operations in every hourly batch. Both workflows safely do nothing while `DATABASE_URL` is absent.
 
 Before the first scheduled run, migrate the database and populate active habitat profiles with the offline North American habitat workflow. Provisional prototype seeders were removed after measured production coverage was established.
 

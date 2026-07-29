@@ -48,7 +48,7 @@ npm run forecast:run-monthly
 npm run forecast:compare-shadow
 ```
 
-GitHub Actions runs `npm run forecast:run` once per day and follows it with `npm run forecast:cleanup`; do not launch a second long-running forecast scheduler in production. Schedule `npm run forecast:run-monthly` after the ECMWF SEAS5 update on the 5th of each month. The daily worker refreshes notable, recently active or requested campgrounds daily and lower-interest profiled campgrounds weekly. A page view can queue a stale campground and temporarily promote it to daily refresh; this activity changes cadence only, never risk.
+GitHub Actions runs a bounded `npm run forecast:run` batch at minute 17 of every hour instead of one large daily burst. The default batch contains at most 200 prioritized campgrounds and uses one Open-Meteo request at a time. A separate daily maintenance workflow refreshes schedule priorities and report summaries, then applies retention halfway between forecast batches. Do not launch a second long-running forecast scheduler in production. Schedule `npm run forecast:run-monthly` after the ECMWF SEAS5 update on the 5th of each month. Notable, recently active or requested campgrounds remain on daily cadence; lower-interest profiled campgrounds remain weekly. A page view can queue a stale campground and temporarily promote it to daily refresh; this activity changes cadence only, never risk.
 
 The North American habitat worker reads small cloud windows from WorldCover, JRC surface water, Copernicus elevation, CWIM/NWI and permitted BC Freshwater Atlas layers. It processes resumable batches independently from daily weather:
 

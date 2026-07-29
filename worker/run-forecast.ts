@@ -308,8 +308,16 @@ async function loadCachedRegionalWeather(
 }
 
 try {
-  const reportSummary = await refreshRecentReportSummaries(generatedAt);
-  await syncForecastSchedules();
+  const refreshReportSummaries =
+    process.env.FORECAST_REFRESH_REPORT_SUMMARIES !== "false";
+  const syncSchedules = process.env.FORECAST_SYNC_SCHEDULES !== "false";
+  const reportSummary = refreshReportSummaries
+    ? await refreshRecentReportSummaries(generatedAt)
+    : {
+        skipped: true,
+        reason: "handled by the daily forecast maintenance workflow",
+      };
+  if (syncSchedules) await syncForecastSchedules();
   for (const item of selected)
     await registerRun(item.artifact, item.production);
 

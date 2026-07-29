@@ -23,6 +23,7 @@
     "prelaunch:optimize": "node --env-file-if-exists=.env.local --import tsx worker/optimize-database.ts",
     "prelaunch:reset-forecast-storage": "node --env-file-if-exists=.env.local --import tsx worker/reset-prelaunch-forecast-storage.ts",
     "forecast:run": "node --env-file-if-exists=.env.local --import tsx worker/run-forecast.ts",
+    "forecast:sync-schedules": "node --env-file-if-exists=.env.local --import tsx worker/sync-forecast-schedules.ts",
     "forecast:cleanup": "node --env-file-if-exists=.env.local --import tsx worker/cleanup-forecast-retention.ts",
     "forecast:status": "node --env-file-if-exists=.env.local --import tsx worker/forecast-status.ts",
     "reports:summarize": "node --env-file-if-exists=.env.local --import tsx worker/run-report-summaries.ts",
