@@ -10,6 +10,11 @@ const workflows = readdirSync(workflowDirectory)
     fileName,
     content: readFileSync(join(workflowDirectory, fileName), "utf8"),
   }));
+const lockfile = JSON.parse(
+  readFileSync(join(process.cwd(), "package-lock.json"), "utf8"),
+) as {
+  packages: Record<string, { dev?: boolean; devOptional?: boolean }>;
+};
 
 describe("GitHub Actions workflows", () => {
   it("uses current Node 24-based GitHub actions", () => {
@@ -38,5 +43,16 @@ describe("GitHub Actions workflows", () => {
     expect(daily).toContain("npm ci --omit=dev --legacy-peer-deps");
     expect(daily).toContain("Publish forecast with a resumable retry");
     expect(daily).toContain("for attempt in 1 2");
+  });
+
+  it("keeps migration tooling out of scheduled production installs", () => {
+    expect(lockfile.packages["node_modules/tsx"]?.dev).not.toBe(true);
+    expect(lockfile.packages["node_modules/drizzle-kit"]?.dev).toBe(true);
+    expect(lockfile.packages["node_modules/@esbuild-kit/esm-loader"]?.dev).toBe(
+      true,
+    );
+    expect(lockfile.packages["node_modules/@esbuild-kit/core-utils"]?.dev).toBe(
+      true,
+    );
   });
 });
