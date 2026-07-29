@@ -35,7 +35,7 @@ describe("GitHub Actions workflows", () => {
     )?.content;
 
     expect(daily).toBeDefined();
-    expect(daily).toContain("npm ci --omit=dev");
+    expect(daily).toContain("npm ci --omit=dev --legacy-peer-deps");
     expect(daily).toContain("Publish forecast with a resumable retry");
     expect(daily).toContain("for attempt in 1 2");
   });

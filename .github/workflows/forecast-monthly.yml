@@ -40,6 +40,6 @@ jobs:
           node-version: 22
           cache: npm
       - if: steps.config.outputs.configured == 'true'
-        run: npm ci --omit=dev
+        run: npm ci --omit=dev --legacy-peer-deps
       - if: steps.config.outputs.configured == 'true'
         run: npm run forecast:run-monthly
