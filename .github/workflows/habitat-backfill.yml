@@ -37,7 +37,7 @@ jobs:
             default_limit: "25"
           - profile_tier: minor-simplified
             default_limit: "250"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -57,26 +57,26 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.config.outputs.configured == 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - if: steps.config.outputs.configured == 'true'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - if: steps.config.outputs.configured == 'true'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: requirements-habitat.txt
       - if: steps.config.outputs.configured == 'true'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .cache/habitat/http
           key: habitat-${{ matrix.profile_tier }}-${{ runner.os }}
           restore-keys: habitat-
       - if: steps.config.outputs.configured == 'true'
-        run: npm ci
+        run: npm ci --omit=dev
       - if: steps.config.outputs.configured == 'true'
         run: python -m pip install -r requirements-habitat.txt
       - if: steps.config.outputs.configured == 'true'

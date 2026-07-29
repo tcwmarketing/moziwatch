@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -33,13 +33,13 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.config.outputs.configured == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - if: steps.config.outputs.configured == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - if: steps.config.outputs.configured == 'true'
-        run: npm ci
+        run: npm ci --omit=dev
       - if: steps.config.outputs.configured == 'true'
         run: npm run forecast:run-monthly

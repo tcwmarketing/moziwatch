@@ -3,6 +3,7 @@ import { OpenMeteoProvider } from "@/worker/providers/open-meteo";
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("OpenMeteoProvider", () => {
@@ -105,6 +106,36 @@ describe("OpenMeteoProvider", () => {
         }),
       )
       .mockResolvedValueOnce(Response.json(payload));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new OpenMeteoProvider(
+      "https://api.open-meteo.com/v1/forecast",
+    );
+    const [result] = await provider.fetchCurrentDay(
+      [{ key: "cell", latitude: 49.25, longitude: -123.1 }],
+      "2026-07-14",
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.variables.soil_moisture_0_to_7cm_mean).toBeCloseTo(0.2);
+  });
+
+  it("retries a temporary network failure before giving up", async () => {
+    const payload = {
+      daily: {
+        temperature_2m_mean: [18],
+        relative_humidity_2m_mean: [65],
+        dew_point_2m_mean: [11],
+        precipitation_sum: [2],
+        wind_speed_10m_mean: [8],
+      },
+      hourly: { soil_moisture_0_to_7cm: Array(24).fill(0.2) },
+    };
+    const fetchMock = vi
+      .fn<(input: RequestInfo | URL) => Promise<Response>>()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(Response.json(payload));
+    vi.stubEnv("FORECAST_OPEN_METEO_RETRY_BASE_MS", "1");
     vi.stubGlobal("fetch", fetchMock);
 
     const provider = new OpenMeteoProvider(

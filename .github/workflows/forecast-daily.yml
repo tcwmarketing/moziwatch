@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # The public endpoint may enforce an hourly cooldown. A customer API key
     # avoids that delay; this ceiling still lets the resumable fallback finish.
     timeout-minutes: 240
@@ -35,15 +35,28 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.config.outputs.configured == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - if: steps.config.outputs.configured == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - if: steps.config.outputs.configured == 'true'
-        run: npm ci
-      - if: steps.config.outputs.configured == 'true'
-        run: npm run forecast:run
+        run: npm ci --omit=dev
+      - name: Publish forecast with a resumable retry
+        if: steps.config.outputs.configured == 'true'
+        shell: bash
+        run: |
+          for attempt in 1 2; do
+            if npm run forecast:run; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 2 ]; then
+              echo "::error::Daily forecast failed after the resumable retry."
+              exit 1
+            fi
+            echo "::warning::Daily forecast attempt failed; retrying the resumable run in 60 seconds."
+            sleep 60
+          done
       - if: always() && steps.config.outputs.configured == 'true'
         run: npm run forecast:cleanup

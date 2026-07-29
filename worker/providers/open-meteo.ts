@@ -107,10 +107,38 @@ async function fetchWithRetry(url: string, timeoutMs: number) {
     1,
     Math.min(10, Number(process.env.FORECAST_OPEN_METEO_MAX_ATTEMPTS) || 10),
   );
+  const networkRetryBaseMs = Math.max(
+    1,
+    Math.min(
+      60_000,
+      Number(process.env.FORECAST_OPEN_METEO_RETRY_BASE_MS) || 5_000,
+    ),
+  );
   for (let attempt = 0; attempt < maximumAttempts; attempt++) {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (error) {
+      if (attempt === maximumAttempts - 1) throw error;
+      const cause =
+        error instanceof Error && error.cause && typeof error.cause === "object"
+          ? (error.cause as { code?: unknown })
+          : null;
+      const reason =
+        cause && typeof cause.code === "string"
+          ? `${error instanceof Error ? error.name : "network error"} (${cause.code})`
+          : error instanceof Error
+            ? error.name
+            : "network error";
+      const delayMs = Math.min(60_000, networkRetryBaseMs * 2 ** attempt);
+      console.warn(
+        `Open-Meteo request failed with ${reason}; retrying attempt ${attempt + 2}/${maximumAttempts} in ${Math.round(delayMs / 1_000)} seconds.`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      continue;
+    }
     if (response.ok) return response;
     const retryable = response.status === 429 || response.status >= 500;
     if (!retryable || attempt === maximumAttempts - 1)
