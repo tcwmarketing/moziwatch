@@ -60,10 +60,12 @@ export class OpenMeteoSeasonalProvider {
   private readonly endpoint: string;
 
   constructor(
-    baseUrl = "https://seasonal-api.open-meteo.com/v1/seasonal",
+    baseUrl?: string,
     private apiKey?: string,
   ) {
-    const url = new URL(baseUrl);
+    const url = new URL(
+      baseUrl?.trim() || "https://seasonal-api.open-meteo.com/v1/seasonal",
+    );
     this.endpoint = url.toString().replace(/\/$/, "");
   }
 

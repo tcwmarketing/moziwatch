@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OpenMeteoProvider } from "@/worker/providers/open-meteo";
+import { OpenMeteoSeasonalProvider } from "@/worker/providers/open-meteo-seasonal";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -255,5 +256,33 @@ describe("OpenMeteoProvider", () => {
     expect(result.history).toHaveLength(60);
     expect(result.v3Outlook).toHaveLength(8);
     expect(result.v3Outlook[0].hourly).toHaveLength(24);
+  });
+});
+
+describe("OpenMeteoSeasonalProvider", () => {
+  it("uses the public seasonal endpoint when an environment override is blank", async () => {
+    const fetchMock = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(
+      async () =>
+        Response.json({
+          monthly: {
+            time: ["2026-08"],
+            temperature_2m_mean: [20],
+            temperature_2m_anomaly: [1],
+            precipitation_mean: [30],
+            precipitation_anomaly: [5],
+          },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new OpenMeteoSeasonalProvider("");
+
+    const [result] = await provider.fetchMonthlyOutlooks([
+      { id: "camp", latitude: 49.25, longitude: -123.1 },
+    ]);
+
+    const request = new URL(String(fetchMock.mock.calls[0][0]));
+    expect(request.hostname).toBe("seasonal-api.open-meteo.com");
+    expect(request.pathname).toBe("/v1/seasonal");
+    expect(result.outlook).toHaveLength(1);
   });
 });

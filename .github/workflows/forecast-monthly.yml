@@ -20,7 +20,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       OPEN_METEO_API_KEY: ${{ secrets.OPEN_METEO_API_KEY }}
-      OPEN_METEO_SEASONAL_BASE_URL: ${{ vars.OPEN_METEO_SEASONAL_BASE_URL }}
+      OPEN_METEO_SEASONAL_BASE_URL: ${{ vars.OPEN_METEO_SEASONAL_BASE_URL || 'https://seasonal-api.open-meteo.com/v1/seasonal' }}
     steps:
       - name: Check forecast configuration
         id: config
