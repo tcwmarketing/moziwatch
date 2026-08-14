@@ -62,10 +62,7 @@ function structured(event: string, details: Record<string, unknown>) {
   );
 }
 
-async function sourceUpsert(tx: Tx, record: NormalizedLocation, runId: string) {
-  const digest = checksum(record);
-  const retainedRaw = compactLocationRawPayload(record);
-  const contacts = retainedContacts(record);
+async function ensureSourceProvider(tx: Tx, record: NormalizedLocation) {
   await tx`
     INSERT INTO location_source_providers (
       source, license, attribution, default_priority
@@ -78,6 +75,12 @@ async function sourceUpsert(tx: Tx, record: NormalizedLocation, runId: string) {
       default_priority = excluded.default_priority,
       updated_at = now()
   `;
+}
+
+async function sourceUpsert(tx: Tx, record: NormalizedLocation, runId: string) {
+  const digest = checksum(record);
+  const retainedRaw = compactLocationRawPayload(record);
+  const contacts = retainedContacts(record);
   const existing = await tx<
     { id: string; campground_id: string | null; checksum: string }[]
   >`
@@ -543,6 +546,7 @@ async function persistBatch(records: NormalizedLocation[], runId: string) {
     const blocked = new Set(
       tombstones.map((row) => `${row.source}:${row.external_id}`),
     );
+    if (records[0]) await ensureSourceProvider(tx, records[0]);
     const results = [];
     for (const record of records) {
       if (blocked.has(`${record.source}:${record.externalId}`)) {

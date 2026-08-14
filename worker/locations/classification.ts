@@ -10,6 +10,10 @@ export type CampgroundEvidence = {
   hasTentOrMixedSites?: boolean;
   individualSite?: boolean;
   permanentlyClosed?: boolean;
+  /** The source is a licensed outdoor-stay catalogue, not a general POI feed. */
+  outdoorStayProperty?: boolean;
+  /** RV parks are eligible for this source instead of being treated as POI noise. */
+  allowRvOnly?: boolean;
 };
 
 export type CampgroundDecision =
@@ -49,16 +53,19 @@ export function classifyCampground(
     return { accepted: false, reason: "individual_campsite_or_pitch" };
 
   const exactCampgroundCategory = categories.includes("campground");
-  const explicitCamping =
+  const documentedCamping =
     exactCampgroundCategory ||
     evidence.hasCampingActivity ||
     /\b(campground|camping park|frontcountry camping|backcountry camping)\b/i.test(
       text,
     );
+  const explicitCamping = documentedCamping || evidence.outdoorStayProperty;
   if (!explicitCamping)
     return { accepted: false, reason: "no_campground_evidence" };
 
-  const rvEvidence = /\b(rv|recreational vehicle|caravan)\b/i.test(text);
+  const rvEvidence = /\b(rv|recreational vehicle|caravan|motorcoach)\b/i.test(
+    text,
+  );
   const tentOrMixedEvidence =
     evidence.hasTentOrMixedSites ||
     /\b(tent|walk[- ]?in|backcountry|primitive|mixed camping)\b/i.test(text);
@@ -68,12 +75,17 @@ export function classifyCampground(
     /\b(rv park|motorcoach resort|seasonal trailer park|mobile home park)\b/i.test(
       text,
     );
-  if (rvOnlyEvidence) return { accepted: false, reason: "rv_only_facility" };
+  if (rvOnlyEvidence)
+    return evidence.allowRvOnly
+      ? { accepted: true, locationType: "rv_park" }
+      : { accepted: false, reason: "rv_only_facility" };
 
   if (/\bbackcountry|primitive|walk[- ]?in\b/i.test(text))
     return { accepted: true, locationType: "backcountry_campground" };
   if (/\bgroup\b/i.test(text))
     return { accepted: true, locationType: "group_campground" };
+  if (evidence.outdoorStayProperty && !documentedCamping)
+    return { accepted: true, locationType: "other_established_campground" };
   return { accepted: true, locationType: "developed_campground" };
 }
 

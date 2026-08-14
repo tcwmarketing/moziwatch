@@ -43,6 +43,24 @@ const RAW_FIELDS: Partial<Record<LocationSource, readonly string[]>> = {
     "capacity:motorhome",
   ],
   nps: ["campsites"],
+  outreserve: [
+    "outreserve_id",
+    "outreserve_uuid",
+    "outreserve_slug",
+    "destination_id",
+    "state_id",
+    "country_id",
+    "avg_rating",
+    "reviews_count",
+    "currency",
+    "instant_book",
+    "pet_friendly",
+    "featured",
+    "site_types",
+    "location",
+    "affiliate_program_available",
+    "affiliate_link_status",
+  ],
 };
 
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;

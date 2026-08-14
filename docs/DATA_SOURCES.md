@@ -12,19 +12,20 @@ Reviewed 2026-07-16. Recheck terms before production launch and retain source-sp
 
 ## Campground locations
 
-| Source                         | Use                                                                             | Licence / coverage                                                   |
-| ------------------------------ | ------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Overture Places                | Broad US and non-BC Canadian exact-`campground` discovery                       | Overture record-level source licences; release and sources retained. |
-| Parks Canada accommodations    | Federal campgrounds outside BC                                                  | Open Government Licence - Canada. Individual pitches consolidated.   |
-| Québec tourism syndication     | Registered Québec campgrounds                                                   | CC BY 4.0.                                                           |
-| Nova Scotia park entrances     | Provincial camping parks                                                        | Open Government Licence - Nova Scotia.                               |
-| RIDB / Recreation.gov          | US federal recreation facilities                                                | RIDB API agreement and required Recreation.gov attribution.          |
-| National Park Service API      | NPS campground gap enrichment                                                   | US government data subject to published NPS API terms.               |
-| USDA Forest Service ArcGIS     | USFS campground gap enrichment                                                  | U.S. government data and published USDA disclaimer.                  |
-| Recreation Sites and Trails BC | BC recreation sites with a positive campsite count                              | Open Government Licence - British Columbia.                          |
-| RIDB campsite inventory        | Reservable campsite records grouped by linked U.S. federal facility             | RIDB API Access Agreement; counts can exclude non-reservable sites.  |
-| BC Parks Data API              | Provincial parks with active campground operating areas                         | Open Government Licence - British Columbia and published API terms.  |
-| GeoNames cities500             | Offline nearest-place and province/state derivation for coordinate-only records | CC BY 4.0; attribution and field provenance retained.                |
+| Source                         | Use                                                                             | Licence / coverage                                                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Overture Places                | Broad US and non-BC Canadian exact-`campground` discovery                       | Overture record-level source licences; release and sources retained.                                                                   |
+| Parks Canada accommodations    | Federal campgrounds outside BC                                                  | Open Government Licence - Canada. Individual pitches consolidated.                                                                     |
+| Québec tourism syndication     | Registered Québec campgrounds                                                   | CC BY 4.0.                                                                                                                             |
+| Nova Scotia park entrances     | Provincial camping parks                                                        | Open Government Licence - Nova Scotia.                                                                                                 |
+| RIDB / Recreation.gov          | US federal recreation facilities                                                | RIDB API agreement and required Recreation.gov attribution.                                                                            |
+| National Park Service API      | NPS campground gap enrichment                                                   | US government data subject to published NPS API terms.                                                                                 |
+| USDA Forest Service ArcGIS     | USFS campground gap enrichment                                                  | U.S. government data and published USDA disclaimer.                                                                                    |
+| Recreation Sites and Trails BC | BC recreation sites with a positive campsite count                              | Open Government Licence - British Columbia.                                                                                            |
+| RIDB campsite inventory        | Reservable campsite records grouped by linked U.S. federal facility             | RIDB API Access Agreement; counts can exclude non-reservable sites.                                                                    |
+| BC Parks Data API              | Provincial parks with active campground operating areas                         | Open Government Licence - British Columbia and published API terms.                                                                    |
+| GeoNames cities500             | Offline nearest-place and province/state derivation for coordinate-only records | CC BY 4.0; attribution and field provenance retained.                                                                                  |
+| OutReserve Partner API         | Licensed private campground, outdoor-stay and RV-park discovery                 | Partner API agreement; Bearer key, source UUID and attribution retained. Current search inventory is capped at 10,000 accessible rows. |
 
 ## Implemented habitat sources
 
@@ -49,7 +50,7 @@ Reviewed 2026-07-16. Recheck terms before production launch and retain source-sp
 
 ## Not used as nuisance labels
 
-CDC ArboNET, MosquitoNET and Canadian mosquito-borne disease surveillance concern disease/vector surveillance rather than camper biting nuisance. They are not direct forecast labels. Google Maps, The Dyrt, Campendium, Hipcamp, KOA and other commercial directories are not mined without an explicit licensed feed or written permission.
+CDC ArboNET, MosquitoNET and Canadian mosquito-borne disease surveillance concern disease/vector surveillance rather than camper biting nuisance. They are not direct forecast labels. Google Maps, The Dyrt, Campendium, Hipcamp, KOA and other commercial directories are not mined without an explicit licensed feed or written permission. OutReserve is used only through the access expressly granted for this project.
 
 ## OSM location-import policy
 

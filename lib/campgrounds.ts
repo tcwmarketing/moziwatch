@@ -114,6 +114,7 @@ const SOURCE_LABELS: Record<string, string> = {
   usfs: "USDA Forest Service",
   "overture-ca": "Overture Maps Foundation",
   "overture-us": "Overture Maps Foundation",
+  outreserve: "OutReserve",
   administrator: "Moziwatch administrator",
 };
 

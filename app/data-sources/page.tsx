@@ -51,6 +51,14 @@ const locationSources = [
     "https://ridb.recreation.gov/",
   ],
   [
+    "outreserve",
+    "OutReserve Partner API",
+    "Licensed private campgrounds and outdoor stays in the United States and Canada",
+    "OutReserve Partner API agreement",
+    "Manual during API pilot",
+    "https://outreserve.com/developers",
+  ],
+  [
     "nps",
     "National Park Service",
     "NPS campground gap enrichment",

@@ -27,6 +27,7 @@ npm run locations:import:nova-scotia -- --dry-run --limit=25
 npm run locations:import:ridb -- --dry-run --limit=25
 npm run locations:import:usfs -- --dry-run --limit=25
 npm run locations:import:nps -- --dry-run --limit=25
+npm run locations:import:outreserve -- --dry-run --limit=25
 ```
 
 Run all enabled non-BC sources with `npm run locations:import:all`. `RIDB_API_KEY` or `RIDB_BULK_FILE` enables RIDB; `NPS_API_KEY` enables the optional NPS supplement. Overture, Parks Canada, Québec, Nova Scotia, and USFS need no API key. `OVERTURE_RELEASE` may pin a release; otherwise the worker resolves the current release from the official STAC catalog. `OVERTURE_PYTHON` may identify a non-default Python executable.
@@ -34,6 +35,16 @@ Run all enabled non-BC sources with `npm run locations:import:all`. `RIDB_API_KE
 For the first continent-scale load only, `locations:bootstrap:overture-ca`, `locations:bootstrap:overture-us`, `locations:bootstrap:ridb`, and `locations:bootstrap:usfs` use set-based source upserts. They automatically link one unambiguous exact-name match within 250 metres and preserve all existing canonical rows and manual locks; every other accepted record receives a deterministic canonical ID/slug. Normal scheduled refreshes use the full field-by-field matcher.
 
 All commands accept `--dry-run`, `--limit=N`, `--batch=N`, `--country=CA`, `--region=ON`, `--dataset-version=value`, and `--resume=RUN_UUID`. Overture supports `--region` at query time. Dry and limited runs never increase missing-record counters.
+
+### OutReserve partner feed
+
+`npm run locations:import:outreserve` imports the licensed outdoor-stay inventory using the server-only `OUTRESERVE_API` Bearer token. Requests are serialized and spaced by at least `OUTRESERVE_REQUEST_INTERVAL_MS` (default 1.1 seconds), retry timeouts and transient 429/5xx responses with exponential backoff, and never place the key in a URL or stored payload.
+
+The connector resolves country and state identifiers, then streams Stays Search at the documented maximum page size. It retains only compact provenance and later-affiliate fields: OutReserve ID, UUID, slug, destination/state/country IDs, rating summary, currency, booking capability flags, site-type labels and affiliate status. It deliberately does not fetch one property-detail response per campground, and it does not publish an affiliate or reservation URL until OutReserve supplies the tracking-link format and the affiliate feature is activated.
+
+OutReserve is a trusted, licensed outdoor-stay catalogue, so its campground and RV-park properties are source-verified at priority 80. It can enrich Overture records but does not override manual data. Normal spatial/name matching links strong duplicates automatically, sends uncertain matches to the existing review queue, and creates a canonical campground only when no credible match exists.
+
+As of 2026-08-14, the provider's search response reports more US properties than its 10,000-row searchable cap, the advertised search filters do not narrow results, and destination-scoped listing routes return errors. Every OutReserve run is therefore deliberately limited to 10,000 rows; inaccessible rows are never treated as deleted. Keep this source on its dedicated command rather than the shared weekly/monthly schedules until the provider confirms a complete, filterable traversal path.
 
 ## Inclusion and retention policy
 

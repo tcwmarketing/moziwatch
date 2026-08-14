@@ -21,7 +21,8 @@ export type LocationSource =
   | "quebec-tourism"
   | "nova-scotia-parks"
   | "bc-recreation"
-  | "bc-parks";
+  | "bc-parks"
+  | "outreserve";
 
 export type CampsiteCountKind =
   "official_total" | "reservable_inventory" | "mapped_capacity";

@@ -10,6 +10,7 @@ import { quebecRecords } from "./connectors/quebec";
 import { novaScotiaRecords } from "./connectors/nova-scotia";
 import { usfsRecords } from "./connectors/usfs";
 import { overtureRecords, resolveOvertureRelease } from "./connectors/overture";
+import { outreserveRecords } from "./connectors/outreserve";
 import {
   normalizeName,
   type ImportOptions,
@@ -99,6 +100,21 @@ async function runSource(source: NormalizedLocation["source"]) {
     return processLocationImport(source, novaScotiaRecords(), options);
   if (source === "usfs")
     return processLocationImport(source, usfsRecords(), options);
+  if (source === "outreserve") {
+    // Search is presently capped by the provider. Keeping a limit prevents a
+    // partial inventory from marking inaccessible rows as missing.
+    const accessibleOptions = {
+      ...options,
+      limit: options.limit || 10_000,
+      datasetVersion:
+        options.datasetVersion || "outreserve-api-v1-search-cap-10000",
+    };
+    return processLocationImport(
+      source,
+      outreserveRecords(),
+      accessibleOptions,
+    );
+  }
   throw new Error(`Unsupported location source: ${source}`);
 }
 
@@ -636,6 +652,7 @@ try {
   else if (command === "quebec") await runSource("quebec-tourism");
   else if (command === "nova-scotia") await runSource("nova-scotia-parks");
   else if (command === "usfs") await runSource("usfs");
+  else if (command === "outreserve") await runSource("outreserve");
   else if (command === "status") await status();
   else if (command === "audit") await audit();
   else if (command === "coverage-gaps")
