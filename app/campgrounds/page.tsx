@@ -10,6 +10,7 @@ import {
   type DirectorySort,
 } from "@/lib/campground-directory";
 import { absoluteUrl } from "@/lib/seo";
+import { campgroundOperationalStatusLabel } from "@/config/campground-operational-status";
 
 export const metadata: Metadata = {
   title: "Campground mosquito reports and forecasts",
@@ -144,6 +145,7 @@ export default async function CampgroundDirectoryPage({ searchParams }: Props) {
                     {campground.official_campsite_count !== null
                       ? ` · ${campground.official_campsite_count.toLocaleString()} site${campground.official_campsite_count === 1 ? "" : "s"}`
                       : " · Site count unavailable"}
+                    {` · ${campgroundOperationalStatusLabel(campground.operational_status)}`}
                     {campground.distance_meters !== null
                       ? ` · ${Math.round(campground.distance_meters / 1000).toLocaleString()} km away`
                       : ""}

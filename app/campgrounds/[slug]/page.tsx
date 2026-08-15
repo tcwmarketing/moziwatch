@@ -27,6 +27,7 @@ import {
   isCampgroundContentIndexable,
 } from "@/lib/campground-content";
 import { parseDatabaseDate } from "@/lib/database-date";
+import { campgroundOperationalStatusLabel } from "@/config/campground-operational-status";
 
 export const dynamic = "force-dynamic";
 
@@ -210,6 +211,11 @@ export default async function CampgroundPage({ params, searchParams }: Props) {
             {campground.official_campsite_count !== null
               ? ` · ${campground.official_campsite_count} campsite${campground.official_campsite_count === 1 ? "" : "s"}`
               : ""}
+          </p>
+          <p
+            className={`operational-status operational-status-${campground.operational_status}`}
+          >
+            {campgroundOperationalStatusLabel(campground.operational_status)}
           </p>
           {campground.maintenance_status || facilities.length ? (
             <p className="location-source-details">

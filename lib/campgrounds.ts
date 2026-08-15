@@ -33,6 +33,7 @@ type CampgroundRow = {
   data_source: string;
   verification_status:
     "unverified" | "source_verified" | "owner_verified" | "manually_verified";
+  operational_status: "active" | "seasonal" | "closed" | "review";
   preferred_source: string | null;
   official_campsite_count: number | null;
   campsite_count_kind:
@@ -337,7 +338,7 @@ export async function listCampgrounds(
 export async function listAllCampgroundsForMaintenance(period: RatingPeriod) {
   const rows = await sqlClient<CampgroundRow[]>`
     SELECT c.id, c.name, c.slug, c.location_type, c.data_source,
-           c.verification_status,
+           c.verification_status, c.operational_status,
            loc.source AS preferred_source,
            capacity.campsite_count AS official_campsite_count,
            capacity.campsite_count_kind, capacity.source AS campsite_count_source,
@@ -415,7 +416,7 @@ export async function listAllCampgroundsForMaintenance(period: RatingPeriod) {
 export async function getCampgroundBySlug(slug: string) {
   const rows = await sqlClient<CampgroundRow[]>`
     SELECT c.id, c.name, c.slug, c.location_type, c.data_source,
-           c.verification_status,
+           c.verification_status, c.operational_status,
            loc.source AS preferred_source,
            capacity.campsite_count AS official_campsite_count,
            capacity.campsite_count_kind, capacity.source AS campsite_count_source,
@@ -499,7 +500,7 @@ export async function getCampgroundMapDetail(
 ) {
   const rows = await sqlClient<CampgroundRow[]>`
     SELECT c.id, c.name, c.slug, c.location_type, c.data_source,
-           c.verification_status,
+           c.verification_status, c.operational_status,
            loc.source AS preferred_source,
            capacity.campsite_count AS official_campsite_count,
            capacity.campsite_count_kind, capacity.source AS campsite_count_source,

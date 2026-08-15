@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   normalizeOutreserveStay,
+  outreserveDetailEvidence,
   OutreserveClient,
   outreserveRecords,
   type OutreserveNormalizationContext,
@@ -57,8 +58,44 @@ describe("OutReserve location connector", () => {
         reviews_count: 37,
         affiliate_program_available: true,
         affiliate_link_status: "not_enabled",
+        provider_listing_status: "active",
+        provider_status_basis: "active_search_inventory",
       },
     });
+  });
+
+  it("counts individual camping units without treating guest capacity as sites", () => {
+    expect(
+      outreserveDetailEvidence({
+        data: {
+          status: "active",
+          units: [
+            { id: 1, unit_type: "RV", max_occupancy: 10 },
+            { id: 2, unit_type: "Tent", max_occupancy: 6 },
+            { id: 3, unit_type: "Glamping", max_occupancy: 4 },
+            { id: 4, unit_type: "Cabin", max_occupancy: 8 },
+            { id: 2, unit_type: "Tent", max_occupancy: 6 },
+          ],
+        },
+      }),
+    ).toEqual({
+      providerStatus: "active",
+      canonicalStatus: "active",
+      campsiteCount: 3,
+      unitTypeCounts: { RV: 1, Tent: 1, Glamping: 1 },
+    });
+  });
+
+  it("distinguishes permanent, seasonal and uncertain listing status", () => {
+    expect(
+      outreserveDetailEvidence({ data: { status: "permanently_closed" } }),
+    ).toMatchObject({ canonicalStatus: "closed", campsiteCount: null });
+    expect(
+      outreserveDetailEvidence({ data: { status: "temporarily_closed" } }),
+    ).toMatchObject({ canonicalStatus: "seasonal" });
+    expect(
+      outreserveDetailEvidence({ data: { status: "inactive" } }),
+    ).toMatchObject({ canonicalStatus: "review" });
   });
 
   it("accepts a partner-listed RV park but keeps a generic outdoor stay conservative", () => {
@@ -225,6 +262,31 @@ describe("OutReserve location connector", () => {
     );
     expect(waits).toEqual([1_100]);
     expect(fetchMock.mock.calls[0][0]).not.toContain("fixture-key");
+  });
+
+  it("serializes concurrent request starts below the provider limit", async () => {
+    let now = 0;
+    const waits: number[] = [];
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify({ data: [] }), { status: 200 }),
+    );
+    const client = new OutreserveClient({
+      apiKey: "fixture-key",
+      fetchImpl: fetchMock,
+      now: () => now,
+      sleep: async (milliseconds) => {
+        waits.push(milliseconds);
+        now += milliseconds;
+      },
+      requestIntervalMs: 1_100,
+    });
+    await Promise.all([
+      client.get("one"),
+      client.get("two"),
+      client.get("three"),
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(waits).toEqual([1_100, 1_100]);
   });
 
   it("retries transient provider failures", async () => {

@@ -38,6 +38,7 @@ type DirectoryRow = {
   latitude: number;
   longitude: number;
   location_type: string;
+  operational_status: "active" | "seasonal" | "closed" | "review";
   official_campsite_count: number | null;
   selected_average: number | null;
   selected_count: number;
@@ -98,7 +99,7 @@ export async function getCampgroundDirectory(
       `WITH base AS (
          SELECT c.id, c.name, c.slug, c.city, c.region, c.country,
            c.latitude, c.longitude,
-           c.location_type,
+           c.location_type, c.operational_status,
            CASE WHEN $1 = 'recent'
              THEN a.recent_average ELSE a.historical_average
            END::double precision AS selected_average,
@@ -148,7 +149,7 @@ export async function getCampgroundDirectory(
          FROM base
        )
        SELECT id, name, slug, city, region, country, latitude, longitude,
-         location_type,
+         location_type, operational_status,
          (
            SELECT lsr.campsite_count
            FROM location_source_records lsr
@@ -213,6 +214,7 @@ export async function getCampgroundDirectory(
       region: row.region,
       country: row.country,
       location_type: row.location_type,
+      operational_status: row.operational_status,
       official_campsite_count: row.official_campsite_count,
       selected_average: row.selected_average,
       selected_count: row.selected_count,

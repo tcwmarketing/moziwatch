@@ -55,6 +55,7 @@
     "locations:import:bc": "node --env-file-if-exists=.env.local --import tsx worker/locations/cli.ts bc",
     "locations:import:bc-parks": "node --env-file-if-exists=.env.local --import tsx worker/locations/cli.ts bc-parks",
     "locations:import:outreserve": "node --env-file-if-exists=.env.local --import tsx worker/locations/cli.ts outreserve",
+    "locations:enrich:outreserve-details": "node --env-file-if-exists=.env.local --import tsx worker/locations/cli.ts enrich-outreserve-details",
     "locations:merge-candidates": "node --env-file-if-exists=.env.local --import tsx worker/locations/cli.ts candidates",
     "locations:refresh": "node --env-file-if-exists=.env.local --import tsx worker/locations/cli.ts refresh",
     "locations:import:all": "node --env-file-if-exists=.env.local --import tsx worker/locations/cli.ts all",

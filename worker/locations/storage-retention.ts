@@ -60,6 +60,11 @@ const RAW_FIELDS: Partial<Record<LocationSource, readonly string[]>> = {
     "location",
     "affiliate_program_available",
     "affiliate_link_status",
+    "provider_listing_status",
+    "provider_status_basis",
+    "provider_status_checked_at",
+    "reservable_site_inventory",
+    "reservable_unit_type_counts",
   ],
 };
 

@@ -14,6 +14,7 @@ import { createSplitMarkerImage, splitMarkerImageId } from "@/lib/map-marker";
 import { requiresCooperativeMapGestures } from "@/lib/map-interactions";
 import { mapViewportCovers, type MapViewport } from "@/lib/map-query";
 import { ReportForm } from "./report-form";
+import { campgroundOperationalStatusLabel } from "@/config/campground-operational-status";
 
 type MapConfig = {
   mode: string;
@@ -664,6 +665,13 @@ export function MapExperience({ mapConfig }: { mapConfig: MapConfig }) {
             {selected.official_campsite_count !== null
               ? ` · ${selected.official_campsite_count} campsite${Number(selected.official_campsite_count) === 1 ? "" : "s"}`
               : ""}
+          </p>
+          <p
+            className={`operational-status operational-status-${String(selected.operational_status || "review")}`}
+          >
+            {campgroundOperationalStatusLabel(
+              String(selected.operational_status || "review"),
+            )}
           </p>
           <p>
             {selected.city}, {selected.region}

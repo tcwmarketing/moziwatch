@@ -35,6 +35,10 @@ import { verifyEstablishedOvertureCampgrounds } from "./overture-verification";
 import { auditLocationCoverage, type CoverageGap } from "./coverage-audit";
 import { osmOverpassGapRecords } from "./connectors/osm-overpass";
 import { verifyEstablishedOsmCampgrounds } from "./osm-verification";
+import {
+  outreserveDetailCoverage,
+  refreshOutreserveDetails,
+} from "./outreserve-details";
 
 function argumentsMap(values: string[]) {
   return Object.fromEntries(
@@ -554,6 +558,28 @@ async function enrichCampsiteCapacity() {
   );
 }
 
+async function enrichOutreserveDetails() {
+  if (options.dryRun) {
+    console.log(
+      JSON.stringify({
+        dryRun: true,
+        coverage: await outreserveDetailCoverage(),
+      }),
+    );
+    return;
+  }
+  const result = await refreshOutreserveDetails({
+    limit: options.limit,
+    batchSize: options.batchSize,
+    concurrency: args.concurrency ? Number(args.concurrency) : 2,
+    staleDays: args["stale-days"] ? Number(args["stale-days"]) : 90,
+    allRecords: args.all === "true",
+  });
+  console.log(
+    JSON.stringify({ event: "outreserve_detail_enrichment_completed", result }),
+  );
+}
+
 async function verifyCanonicalLocation() {
   const id = args.id;
   if (!id || !uuidPattern.test(id))
@@ -679,6 +705,8 @@ try {
   } else if (command === "merge") await mergeDuplicate();
   else if (command === "merge-automatic") await mergeAutomaticDuplicates();
   else if (command === "enrich-capacity") await enrichCampsiteCapacity();
+  else if (command === "enrich-outreserve-details")
+    await enrichOutreserveDetails();
   else if (command === "enrich-localities")
     console.log(JSON.stringify(await enrichCanonicalLocalities(), null, 2));
   else if (command === "verify-saskatchewan")

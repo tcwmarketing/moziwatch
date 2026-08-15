@@ -58,6 +58,20 @@ export type OutreserveStay = {
   country_id?: number | string | null;
 };
 
+export type OutreservePropertyDetailResponse = {
+  data?: {
+    status?: unknown;
+    units?: unknown[] | null;
+  } | null;
+};
+
+export type OutreserveDetailEvidence = {
+  providerStatus: string | null;
+  canonicalStatus: "active" | "seasonal" | "closed" | "review" | null;
+  campsiteCount: number | null;
+  unitTypeCounts: Record<string, number>;
+};
+
 type CountryContext = {
   country: "US" | "CA";
   name: string;
@@ -114,6 +128,61 @@ function siteTypeLabels(siteTypes: unknown[] | null | undefined) {
     })
     .filter(Boolean)
     .slice(0, 20);
+}
+
+function unitType(unit: unknown) {
+  if (!unit || typeof unit !== "object") return null;
+  const row = unit as Record<string, unknown>;
+  return limited(row.unit_type ?? row.site_type ?? row.type, 80);
+}
+
+function reservableCampUnit(type: string | null) {
+  if (!type) return false;
+  return /\b(rv|tent|camp(?:site|ing)?|primitive|walk[- ]?in|backcountry|group|glamp(?:ing)?|yurt)\b/i.test(
+    type,
+  );
+}
+
+/**
+ * Extract only evidence the public Stay detail contract actually supplies.
+ * `max_occupancy` is guest capacity and must never be treated as site count.
+ */
+export function outreserveDetailEvidence(
+  response: OutreservePropertyDetailResponse,
+): OutreserveDetailEvidence {
+  const providerStatus =
+    limited(response.data?.status, 40)?.toLowerCase() || null;
+  const canonicalStatus =
+    providerStatus === "active" ||
+    providerStatus === "open" ||
+    providerStatus === "published"
+      ? "active"
+      : providerStatus === "seasonal" || providerStatus === "temporarily_closed"
+        ? "seasonal"
+        : providerStatus === "closed" || providerStatus === "permanently_closed"
+          ? "closed"
+          : providerStatus
+            ? "review"
+            : null;
+  const unitTypeCounts: Record<string, number> = {};
+  const seen = new Set<string>();
+  for (const [index, unit] of (response.data?.units || []).entries()) {
+    const type = unitType(unit);
+    if (!reservableCampUnit(type)) continue;
+    const row = unit as Record<string, unknown>;
+    const identity =
+      identifier(row.uuid) || identifier(row.id) || `row:${index}`;
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    const label = type || "Camping";
+    unitTypeCounts[label] = (unitTypeCounts[label] || 0) + 1;
+  }
+  return {
+    providerStatus,
+    canonicalStatus,
+    campsiteCount: seen.size || null,
+    unitTypeCounts,
+  };
 }
 
 function localityFromLocation(value: unknown, region: string) {
@@ -254,6 +323,8 @@ export function normalizeOutreserveStay(
       location: limited(row.location, 160),
       affiliate_program_available: true,
       affiliate_link_status: "not_enabled",
+      provider_listing_status: "active",
+      provider_status_basis: "active_search_inventory",
     },
   };
   return normalized;
@@ -269,6 +340,7 @@ export class OutreserveClient {
   private readonly timeoutMs: number;
   private readonly maxAttempts: number;
   private lastRequestStartedAt: number | null = null;
+  private requestStartQueue: Promise<void> = Promise.resolve();
 
   constructor(options: OutreserveClientOptions = {}) {
     this.apiKey = options.apiKey || process.env.OUTRESERVE_API || "";
@@ -301,12 +373,22 @@ export class OutreserveClient {
   }
 
   private async throttle() {
-    if (this.lastRequestStartedAt !== null) {
-      const wait =
-        this.requestIntervalMs - (this.now() - this.lastRequestStartedAt);
-      if (wait > 0) await this.sleep(wait);
+    const previous = this.requestStartQueue;
+    let release: () => void = () => undefined;
+    this.requestStartQueue = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      if (this.lastRequestStartedAt !== null) {
+        const wait =
+          this.requestIntervalMs - (this.now() - this.lastRequestStartedAt);
+        if (wait > 0) await this.sleep(wait);
+      }
+      this.lastRequestStartedAt = this.now();
+    } finally {
+      release();
     }
-    this.lastRequestStartedAt = this.now();
   }
 
   async get<T>(path: string, parameters: Record<string, string | number> = {}) {
