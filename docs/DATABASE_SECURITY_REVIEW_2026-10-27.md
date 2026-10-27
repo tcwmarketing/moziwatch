@@ -46,7 +46,7 @@ path. No Supabase client, Auth conversion, or public RLS policy is required.
 - Test database migration: passed; 36 tables protected, zero audit findings.
 - Dedicated database regression tests: 11 passed, including security probes,
   report concurrency, and location ingestion.
-- Unit suite: 250 passed; 11 database tests skipped without test credentials
+- Unit suite on the production security revision: 238 passed; 11 database tests skipped without test credentials
   (those 11 were run separately against the dedicated database).
 - TypeScript, targeted ESLint, formatting, and whitespace checks: passed.
 - Live health endpoint, homepage, and Bear Creek page: HTTP 200.
@@ -63,7 +63,10 @@ Migration `0022_data_api_security_guard` is now applied to production as well as
 the test project. Independent metadata audits of both projects found all 36
 application tables protected and zero findings. No application records were
 deleted. The published change includes the migration guard, tests, audit command,
-and daily maintenance audit.
+and daily maintenance audit. The maintenance files were installed on the VPS
+after backing up the replaced files. An audit executed from the VPS using its
+own production environment also found 36 protected tables and zero findings.
+The running application did not require a rebuild or restart for these changes.
 
 For future deployments, run `npm run db:migrate`, then
 `npm run db:audit-security`, and repeat public-site smoke checks.
