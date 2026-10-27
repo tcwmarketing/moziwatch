@@ -43,6 +43,9 @@ jobs:
       - name: Refresh forecast priorities
         if: steps.config.outputs.configured == 'true'
         run: npm run forecast:sync-schedules
+      - name: Check database Data API security
+        if: always() && steps.config.outputs.configured == 'true'
+        run: npm run db:audit-security
       - name: Refresh recent-report phrases
         if: steps.config.outputs.configured == 'true'
         run: npm run reports:summarize

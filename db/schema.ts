@@ -116,7 +116,7 @@ export const user = pgTable("user", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const session = pgTable(
   "session",
@@ -138,7 +138,7 @@ export const session = pgTable(
       .defaultNow(),
   },
   (table) => [index("session_user_idx").on(table.userId)],
-);
+).enableRLS();
 
 export const account = pgTable(
   "account",
@@ -174,7 +174,7 @@ export const account = pgTable(
     ),
     index("account_user_idx").on(table.userId),
   ],
-);
+).enableRLS();
 
 export const verification = pgTable(
   "verification",
@@ -191,7 +191,7 @@ export const verification = pgTable(
       .defaultNow(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
-);
+).enableRLS();
 
 export const campgrounds = pgTable(
   "campgrounds",
@@ -258,7 +258,7 @@ export const campgrounds = pgTable(
     index("campgrounds_country_region_idx").on(table.country, table.region),
     index("campgrounds_point_gist_idx").using("gist", table.point),
   ],
-);
+).enableRLS();
 
 export const locationImportRuns = pgTable(
   "location_import_runs",
@@ -302,7 +302,7 @@ export const locationImportRuns = pgTable(
       table.startedAt,
     ),
   ],
-);
+).enableRLS();
 
 export const locationSourceProviders = pgTable("location_source_providers", {
   source: varchar("source", { length: 80 }).primaryKey(),
@@ -315,7 +315,7 @@ export const locationSourceProviders = pgTable("location_source_providers", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const locationSourceRecords = pgTable(
   "location_source_records",
@@ -411,7 +411,7 @@ export const locationSourceRecords = pgTable(
       sql`${table.campsiteCount} IS NULL OR ${table.campsiteCount} BETWEEN 1 AND 100000`,
     ),
   ],
-);
+).enableRLS();
 
 export const locationSourceTombstones = pgTable(
   "location_source_tombstones",
@@ -442,7 +442,7 @@ export const locationSourceTombstones = pgTable(
     index("location_source_tombstones_reason_idx").on(table.reasonCode),
     index("location_source_tombstones_name_idx").on(table.normalizedName),
   ],
-);
+).enableRLS();
 
 export const locationMergeCandidates = pgTable(
   "location_merge_candidates",
@@ -479,7 +479,7 @@ export const locationMergeCandidates = pgTable(
       table.createdAt,
     ),
   ],
-);
+).enableRLS();
 
 export const canonicalDuplicateCandidates = pgTable(
   "canonical_duplicate_candidates",
@@ -531,7 +531,7 @@ export const canonicalDuplicateCandidates = pgTable(
       table.rightCampgroundId,
     ),
   ],
-);
+).enableRLS();
 
 export const locationDeletionCandidates = pgTable(
   "location_deletion_candidates",
@@ -572,7 +572,7 @@ export const locationDeletionCandidates = pgTable(
     ),
     index("location_deletion_candidates_reviewer_idx").on(table.reviewerId),
   ],
-);
+).enableRLS();
 
 export const locationAliases = pgTable(
   "location_aliases",
@@ -586,7 +586,7 @@ export const locationAliases = pgTable(
       .defaultNow(),
   },
   (table) => [index("location_aliases_campground_idx").on(table.campgroundId)],
-);
+).enableRLS();
 
 export const locationSuggestions = pgTable(
   "location_suggestions",
@@ -616,7 +616,7 @@ export const locationSuggestions = pgTable(
   (table) => [
     index("location_suggestions_status_idx").on(table.status, table.createdAt),
   ],
-);
+).enableRLS();
 
 export const contactSubmissions = pgTable(
   "contact_submissions",
@@ -673,7 +673,7 @@ export const contactSubmissions = pgTable(
       table.createdAt,
     ),
   ],
-);
+).enableRLS();
 
 export const reports = pgTable(
   "reports",
@@ -726,7 +726,7 @@ export const reports = pgTable(
         sql`${table.moderationStatus} = 'published' AND ${table.deletedAt} IS NULL`,
       ),
   ],
-);
+).enableRLS();
 
 export const reportAudit = pgTable(
   "report_audit",
@@ -753,7 +753,7 @@ export const reportAudit = pgTable(
     index("report_audit_report_idx").on(table.reportId),
     index("report_audit_actor_idx").on(table.actorId),
   ],
-);
+).enableRLS();
 
 export const savedCampgrounds = pgTable(
   "saved_campgrounds",
@@ -772,7 +772,7 @@ export const savedCampgrounds = pgTable(
     primaryKey({ columns: [table.accountId, table.campgroundId] }),
     index("saved_campgrounds_campground_idx").on(table.campgroundId),
   ],
-);
+).enableRLS();
 
 export const campgroundAggregates = pgTable("campground_aggregates", {
   campgroundId: uuid("campground_id")
@@ -798,7 +798,7 @@ export const campgroundAggregates = pgTable("campground_aggregates", {
   calculatedAt: timestamp("calculated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const donations = pgTable(
   "donations",
@@ -828,7 +828,7 @@ export const donations = pgTable(
       sql`${table.amountMinor} BETWEEN 100 AND 50000`,
     ),
   ],
-);
+).enableRLS();
 
 export const forecastModels = pgTable("forecast_models", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -843,7 +843,7 @@ export const forecastModels = pgTable("forecast_models", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const forecastRuns = pgTable(
   "forecast_runs",
@@ -872,7 +872,7 @@ export const forecastRuns = pgTable(
       table.forecastDate,
     ),
   ],
-);
+).enableRLS();
 
 export const habitatProfileVersions = pgTable("habitat_profile_versions", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -885,7 +885,7 @@ export const habitatProfileVersions = pgTable("habitat_profile_versions", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const campgroundHabitatProfiles = pgTable(
   "campground_habitat_profiles",
@@ -953,7 +953,7 @@ export const campgroundHabitatProfiles = pgTable(
       .where(sql`${table.active} = true`),
     index("campground_habitat_version_idx").on(table.profileVersionId),
   ],
-);
+).enableRLS();
 
 export const campgroundWeatherObservations = pgTable(
   "campground_weather_observations",
@@ -986,7 +986,7 @@ export const campgroundWeatherObservations = pgTable(
       table.observedFor,
     ),
   ],
-);
+).enableRLS();
 
 export const campgroundWeatherCache = pgTable("campground_weather_cache", {
   campgroundId: uuid("campground_id")
@@ -1005,7 +1005,7 @@ export const campgroundWeatherCache = pgTable("campground_weather_cache", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const campgroundWeatherHistoryDaily = pgTable(
   "campground_weather_history_daily",
@@ -1030,7 +1030,7 @@ export const campgroundWeatherHistoryDaily = pgTable(
     }),
     index("campground_weather_history_date_idx").on(table.observedOn),
   ],
-);
+).enableRLS();
 
 export const campgroundForecasts = pgTable(
   "campground_forecasts",
@@ -1072,7 +1072,7 @@ export const campgroundForecasts = pgTable(
     ),
     index("campground_forecast_profile_idx").on(table.habitatProfileId),
   ],
-);
+).enableRLS();
 
 export const campgroundForecastEvidence = pgTable(
   "campground_forecast_evidence",
@@ -1105,7 +1105,7 @@ export const campgroundForecastEvidence = pgTable(
       .notNull()
       .defaultNow(),
   },
-);
+).enableRLS();
 
 export const campgroundForecastSchedules = pgTable(
   "campground_forecast_schedules",
@@ -1137,7 +1137,7 @@ export const campgroundForecastSchedules = pgTable(
       .where(sql`${table.cadence} <> 'paused'`),
     index("campground_forecast_schedule_cadence_idx").on(table.cadence),
   ],
-);
+).enableRLS();
 
 export const campgroundForecastInterestDaily = pgTable(
   "campground_forecast_interest_daily",
@@ -1156,7 +1156,7 @@ export const campgroundForecastInterestDaily = pgTable(
     primaryKey({ columns: [table.campgroundId, table.activityDate] }),
     index("campground_forecast_interest_date_idx").on(table.activityDate),
   ],
-);
+).enableRLS();
 
 export const campgroundMonthlyOutlooks = pgTable(
   "campground_monthly_outlooks",
@@ -1194,7 +1194,7 @@ export const campgroundMonthlyOutlooks = pgTable(
     ),
     index("campground_monthly_outlook_profile_idx").on(table.habitatProfileId),
   ],
-);
+).enableRLS();
 
 export const weatherObservations = pgTable(
   "weather_observations",
@@ -1219,7 +1219,7 @@ export const weatherObservations = pgTable(
   (table) => [
     uniqueIndex("weather_run_cell_uidx").on(table.runId, table.cellKey),
   ],
-);
+).enableRLS();
 
 export const forecastJobLogs = pgTable(
   "forecast_job_logs",
@@ -1239,7 +1239,7 @@ export const forecastJobLogs = pgTable(
       .defaultNow(),
   },
   (table) => [index("forecast_job_logs_run_idx").on(table.runId)],
-);
+).enableRLS();
 
 export const campgroundImports = pgTable(
   "campground_imports",
@@ -1258,7 +1258,7 @@ export const campgroundImports = pgTable(
     committedAt: timestamp("committed_at", { withTimezone: true }),
   },
   (table) => [index("campground_imports_actor_idx").on(table.actorId)],
-);
+).enableRLS();
 
 export const adminAuditLogs = pgTable(
   "admin_audit_logs",
@@ -1279,4 +1279,4 @@ export const adminAuditLogs = pgTable(
       .defaultNow(),
   },
   (table) => [index("admin_audit_logs_actor_idx").on(table.actorId)],
-);
+).enableRLS();

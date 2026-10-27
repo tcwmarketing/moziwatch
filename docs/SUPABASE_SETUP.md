@@ -47,6 +47,34 @@ The project does not require a Supabase URL, anon key, service-role key, or Supa
 
 MoziWatch does not query the Supabase Data API from the browser. Application tables have row-level security enabled and direct grants to the `anon` and `authenticated` Data API roles revoked; server routes use the private PostgreSQL connection instead. Run `npm run prelaunch:audit` after migrations to confirm no application table is missing RLS or unexpectedly exposed through those roles.
 
+Migration `0022_data_api_security_guard` also locks the weather cache, revokes
+application-object access from `PUBLIC` and all three Data API roles (including
+`service_role`), and removes automatic grants for objects created by the
+migration role. Extension-owned objects and Supabase internal schemas are
+excluded. New functions created by the migration role require explicit EXECUTE
+grants, including functions created outside `public` (PostgreSQL's PUBLIC
+function default is global).
+
+Every Drizzle table declares `.enableRLS()`. A unit test enforces this for future
+tables. Both migration commands check the actual database afterward and fail on
+missing RLS, exposed tables/views/sequences/routines, or unsafe creator defaults.
+The daily maintenance workflow also runs the lightweight metadata audit:
+
+```bash
+npm run db:audit-security
+npm run db:audit-security -- --test
+```
+
+The project `sorlxgqcrxdxnlnqvuxm` is configured as the application database;
+`usfakxvqzcntkufgzmbz` is configured as the disposable test database, despite its
+dashboard name "Moziwatch Website". Check the project reference in an alert
+against the connection configuration before deciding which environment it affects.
+
+If REST/GraphQL access is never needed, the owner may additionally disable
+**Enable Data API** in Supabase's Data API integration settings for both projects.
+This is optional additional isolation; database security does not depend on that
+dashboard setting. Do not dismiss an RLS alert without checking the named project.
+
 ## 4. Add production campground data
 
 The checked-in seed command contains fictional development records and must not be run against production. Import a licensed campground CSV through the administrator interface after creating and promoting the first Better Auth account.

@@ -1,4 +1,5 @@
 import { sqlClient } from "@/db";
+import { auditDataApiSecurity } from "@/db/data-api-security";
 
 type Section = { name: string; data?: unknown; error?: string };
 
@@ -18,6 +19,7 @@ function section<T>(name: string, query: () => Promise<T>) {
 }
 
 const checks = [
+  section("dataApiSecurity", () => auditDataApiSecurity(sqlClient)),
   section(
     "campgrounds",
     () => sqlClient`
@@ -348,7 +350,13 @@ const rls = sections.find((item) => item.name === "rowLevelSecurity")?.data as
 const dataApiGrants = sections.find(
   (item) => item.name === "dataApiTableGrants",
 )?.data as unknown[] | undefined;
+const security = sections.find((item) => item.name === "dataApiSecurity");
+const securityIssues = (security?.data as { issues?: string[] } | undefined)
+  ?.issues;
 if (
+  security?.error ||
+  !securityIssues ||
+  securityIssues.length > 0 ||
   (rls?.[0]?.missing_rls?.length || 0) > 0 ||
   (dataApiGrants?.length || 0) > 0
 ) {
