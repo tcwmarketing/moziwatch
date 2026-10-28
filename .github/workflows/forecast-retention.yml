@@ -1,0 +1,32 @@
+name: Paced forecast storage cleanup
+
+on:
+  schedule:
+    - cron: "47 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Serialize with publication so cleanup never competes with forecast writes.
+concurrency:
+  group: staggered-mosquito-forecast
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      FORECAST_CLEANUP_BATCH_SIZE: "100"
+      FORECAST_CLEANUP_BATCH_DELAY_MS: "1000"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --omit=dev --legacy-peer-deps
+      - name: Remove expired forecast data in paced batches
+        run: npm run forecast:cleanup

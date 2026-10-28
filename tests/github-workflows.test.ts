@@ -49,6 +49,7 @@ describe("GitHub Actions workflows", () => {
     expect(daily).toContain("npm ci --omit=dev --legacy-peer-deps");
     expect(daily).toContain("Publish forecast with a resumable retry");
     expect(daily).toContain("for attempt in 1 2");
+    expect(daily).toContain('if [ "$status" -eq 78 ]');
   });
 
   it("runs database-wide forecast maintenance once daily between batches", () => {
@@ -60,8 +61,20 @@ describe("GitHub Actions workflows", () => {
     expect(maintenance).toContain('cron: "47 4 * * *"');
     expect(maintenance).toContain("npm run forecast:sync-schedules");
     expect(maintenance).toContain("npm run reports:summarize");
-    expect(maintenance).toContain("npm run forecast:cleanup");
+    expect(maintenance).not.toContain("npm run forecast:cleanup");
     expect(maintenance).toContain("npm ci --omit=dev --legacy-peer-deps");
+  });
+
+  it("paces retention separately and serializes it with forecast publication", () => {
+    const retention = workflows.find(
+      (workflow) => workflow.fileName === "forecast-retention.yml",
+    )?.content;
+    expect(retention).toContain('cron: "47 */6 * * *"');
+    expect(retention).toContain("group: staggered-mosquito-forecast");
+    expect(retention).toContain('FORECAST_CLEANUP_BATCH_SIZE: "100"');
+    expect(retention).toContain('FORECAST_CLEANUP_BATCH_DELAY_MS: "1000"');
+    expect(retention).toContain("npm run forecast:cleanup");
+    expect(retention).not.toContain("recover-storage");
   });
 
   it("keeps migration tooling out of scheduled production installs", () => {

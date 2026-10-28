@@ -88,9 +88,43 @@ For Supabase, use the transaction pooler URL as `DATABASE_URL` for serverless ap
 
 ## Forecast operations
 
-The worker needs outbound HTTPS to Open-Meteo and database access. Alert when the latest successful hourly batch is older than two hours or when repeated batches fail. Do not publish partial campground results. API caching may continue serving the previous complete result during a provider outage. Hourly publication is capped at 200 prioritized campgrounds, one weather request runs at a time, and GitHub concurrency prevents overlapping forecast batches. Database-wide schedule synchronization, report summarization and `forecast:cleanup` run once in the separate daily maintenance workflow. Incomplete runs are retained for two days, today's and yesterday's daily forecast provenance remain available during staggered publication, monthly outlooks are kept for 550 days, and normalized backfill history is retained for 90 days. Full and normalized Open-Meteo inputs are stored once per shared weather target instead of being duplicated for every campground. Per-campground observation rows retain compact daily values and a reference to that shared source record.
+The worker needs outbound HTTPS to Open-Meteo and database access. Alert when the latest successful hourly batch is older than two hours or when repeated batches fail. Do not publish partial campground results. API caching may continue serving the previous complete result during a provider outage. Hourly publication is capped at 200 prioritized campgrounds, one weather request runs at a time, and GitHub concurrency prevents overlapping forecast batches. Database-wide schedule synchronization and report summarization run once in the daily maintenance workflow. Paced retention runs separately every six hours. Incomplete runs are retained for two days, today's and yesterday's daily forecast provenance remain available during staggered publication, monthly outlooks are kept for 550 days, and normalized backfill history is retained for 90 days. Full and normalized Open-Meteo inputs are stored once per shared weather target instead of being duplicated for every campground. Per-campground observation rows retain compact daily values and a reference to that shared source record.
 
 The Admin forecast-coverage export lists up to 5,000 prioritized campgrounds that have both an active versioned habitat profile and a current outlook. Daily schedules are processed before weekly schedules, with the highest priority scores first.
+
+### Storage maintenance and read-only failures
+
+Forecast retention runs separately at minute 47 every six hours. It shares the
+forecast workflow concurrency group so it cannot overlap publication. Expired
+run children are removed in batches of 100 with one-second pauses instead of
+one large cascading DELETE. Other retention deletes and payload compactions are
+also paced. Ordinary `VACUUM (ANALYZE, TRUNCATE false)` makes freed space reusable
+without a recurring full-table rewrite. Configure bounded batch size/delay using
+`FORECAST_CLEANUP_BATCH_SIZE` and `FORECAST_CLEANUP_BATCH_DELAY_MS`.
+
+SQLSTATE `25006` means the database is read-only; it is distinct from RLS or
+permission-denied errors. Publication checks writability before starting and
+exits with status 78 on read-only errors; the workflow does not pointlessly
+retry that condition. Read-only mode also prevents reports and other writes,
+even when basic read-only page requests still succeed.
+
+On 28 October 2026 the production database occupied about 1.24 GB and WAL another
+544 MB. The raw-weather relation occupied 616 MB for about 54 MB of retained
+payloads. Supabase's configuration file had enabled protective read-only mode.
+The daily bulk cleanup itself failed midway through a cascading delete. This
+requires reclaiming existing physical bloat in addition to pacing future writes.
+
+Preview the one-time recovery with `npm run forecast:recover-storage`. After
+explicit operator approval, `npm run forecast:recover-storage -- --apply`
+rewrites **only** `weather_observations`, retaining every row. It uses the direct
+or session maintenance connection, a three-second lock timeout and a 180-second
+statement timeout. It temporarily enables writes only for that reserved session
+and resets the session afterward. This is never run automatically by a workflow.
+Verify disk usage and read/write status afterward; Supabase normally clears its
+protective mode after disk use falls below its threshold. Then dispatch a small
+forecast batch and check publication before resuming the normal queue.
+
+Reference: [Supabase database size and read-only recovery](https://supabase.com/docs/guides/platform/database-size).
 
 ## Moderation operations
 

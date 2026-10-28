@@ -23,6 +23,11 @@ import {
   syncForecastSchedules,
 } from "./forecast-schedule";
 import { refreshRecentReportSummaries } from "./report-summaries";
+import {
+  assertDatabaseWritable,
+  DatabaseReadOnlyError,
+  isDatabaseReadOnlyError,
+} from "./database-writable";
 
 type ProfileRow = {
   profile_id: string;
@@ -308,6 +313,7 @@ async function loadCachedRegionalWeather(
 }
 
 try {
+  await assertDatabaseWritable(sqlClient);
   const refreshReportSummaries =
     process.env.FORECAST_REFRESH_REPORT_SUMMARIES !== "false";
   const syncSchedules = process.env.FORECAST_SYNC_SCHEDULES !== "false";
@@ -905,9 +911,13 @@ try {
       .join(", ")}`,
   );
 } catch (error) {
-  const message = error instanceof Error ? error.message : String(error);
-  for (const runId of runs.values()) {
-    await sqlClient`
+  if (isDatabaseReadOnlyError(error)) {
+    console.error(new DatabaseReadOnlyError().message);
+    process.exitCode = 78;
+  } else {
+    const message = error instanceof Error ? error.message : String(error);
+    for (const runId of runs.values()) {
+      await sqlClient`
       UPDATE forecast_runs SET
         status = CASE
           WHEN status = 'published'::forecast_run_status
@@ -917,9 +927,10 @@ try {
         error = ${message}
       WHERE id = ${runId}::uuid
     `;
-    await sqlClient`INSERT INTO forecast_job_logs (run_id, level, message) VALUES (${runId}::uuid, 'error', ${message})`;
+      await sqlClient`INSERT INTO forecast_job_logs (run_id, level, message) VALUES (${runId}::uuid, 'error', ${message})`;
+    }
+    throw error;
   }
-  throw error;
 } finally {
   await sqlClient.end();
 }

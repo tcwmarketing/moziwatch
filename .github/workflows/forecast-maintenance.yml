@@ -49,6 +49,3 @@ jobs:
       - name: Refresh recent-report phrases
         if: steps.config.outputs.configured == 'true'
         run: npm run reports:summarize
-      - name: Apply forecast retention
-        if: always() && steps.config.outputs.configured == 'true'
-        run: npm run forecast:cleanup
