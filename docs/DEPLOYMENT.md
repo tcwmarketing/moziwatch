@@ -126,6 +126,36 @@ forecast batch and check publication before resuming the normal queue.
 
 Reference: [Supabase database size and read-only recovery](https://supabase.com/docs/guides/platform/database-size).
 
+If `VACUUM FULL` itself fails with SQLSTATE `53100` (no disk space), do not
+repeat it. It needs working space for the replacement relation. The alternative
+`worker/compact-weather-archive.ts` first exports only Open-Meteo weather rows to
+a private gzip archive on the existing application VPS. Its manifest records
+the row count, compressed-file SHA-256, and an aggregate of every row's checksum.
+It never includes user, report, contact, donation, or account tables.
+
+After separate explicit approval of the **truncate-and-restore method**, the
+`--apply` operation checks that the live table still exactly matches the archive,
+truncates only `weather_observations` without CASCADE, commits to release the
+old file, and restores all IDs and values in five-row batches. It verifies every
+row checksum afterward. Keep the archive; `--resume` can continue restoration
+after a connection failure without truncating again. This approach temporarily
+leaves raw-weather provenance incomplete during restoration, while published
+forecast values remain in their own tables. It is not run by any scheduler.
+
+The lossless round-trip regression test must run **alone** against a dedicated
+empty disposable weather table, with `WEATHER_STORAGE_RECOVERY_TEST=true` and
+`TEST_DATABASE_DISPOSABLE=true`. It also tests safe abort if the live rows changed
+since backup, restartability, and preservation of RLS. This additional opt-in
+prevents the recovery test from interfering with concurrent forecast fixtures.
+
+On 28 October, the initial approved VACUUM FULL failed from exhausted disk;
+ordinary VACUUM did not release file tails. A private archive of all 1,200
+weather rows was created and verified on the VPS. Truncate-and-restore remained
+pending separate approval. Measurements suggest compacting weather, forecast
+evidence and forecast values can bring the existing data to roughly 440–470 MB;
+this is an estimate, not a measured post-recovery total or a guarantee that
+future forecast volume will stay under the Free Plan limit.
+
 ## Moderation operations
 
 The protected Admin area contains Profiles, Submissions and Spam tabs. Account bans revoke active sessions and block future authenticated access; reactivation clears the ban. Deleting an account anonymizes its reports before removing the profile. Report comments and contact messages containing a URL or a configured restricted spam phrase are routed to Spam for manual review. Review both Inbox and Spam regularly; automatic classification is reversible and does not silently delete user content.
