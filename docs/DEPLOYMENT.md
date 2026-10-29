@@ -149,12 +149,31 @@ since backup, restartability, and preservation of RLS. This additional opt-in
 prevents the recovery test from interfering with concurrent forecast fixtures.
 
 On 28 October, the initial approved VACUUM FULL failed from exhausted disk;
-ordinary VACUUM did not release file tails. A private archive of all 1,200
-weather rows was created and verified on the VPS. Truncate-and-restore remained
-pending separate approval. Measurements suggest compacting weather, forecast
-evidence and forecast values can bring the existing data to roughly 440–470 MB;
-this is an estimate, not a measured post-recovery total or a guarantee that
-future forecast volume will stay under the Free Plan limit.
+ordinary VACUUM did not release file tails. After explicit approval of the
+alternative method, the private archive restored all 1,200 weather rows with
+every row checksum matching. The archive and manifest remain outside the web
+root at `~/apps/moziwatch/shared/weather-storage-backup-20261028-verified.jsonl.gz`
+and the adjacent `.manifest.json` file. Do not use the earlier incomplete archive
+without `-verified` in its name.
+
+Compacting forecast evidence and forecast values then retained all 17,256
+evidence rows and 26,856 forecast rows. Database size fell from 1,299,491,987 bytes
+to 450,301,075 bytes (450.3 MB / 429.4 MiB), below the Free Plan's 500 MB limit.
+No campground, habitat, account, report, contact or donation records were removed.
+Supabase automatically cleared protective read-only mode, and a normal write
+transaction was verified without overriding its protection.
+
+The follow-up [forecast verification run](https://github.com/tcwmarketing/moziwatch/actions/runs/40791666156)
+succeeded at 00:05 UTC on 29 October (28 October in Vancouver). Five campgrounds
+were refreshed, producing 40 v2 rows and 40 v3-shadow rows; v3 was not activated.
+After publication the database occupied 450,702,483 bytes. The live homepage,
+directory, Bear Creek details and health endpoint returned HTTP 200. The Data API
+security audit still found 36 protected tables and zero issues.
+
+This is measured recovery, not a guarantee that future volume will remain under
+the Free Plan limit. Only about 49 MB of headroom remains at this checkpoint.
+Check storage after the forecast backlog and routine retention have run; do not
+silently extend retention or increase batch throughput on the Free Plan.
 
 ## Moderation operations
 
