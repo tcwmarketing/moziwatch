@@ -3,6 +3,8 @@ import { OpenMeteoProvider } from "@/worker/providers/open-meteo";
 import { OpenMeteoSeasonalProvider } from "@/worker/providers/open-meteo-seasonal";
 
 afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
@@ -260,29 +262,130 @@ describe("OpenMeteoProvider", () => {
 });
 
 describe("OpenMeteoSeasonalProvider", () => {
-  it("uses the public seasonal endpoint when an environment override is blank", async () => {
-    const fetchMock = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(
-      async () =>
-        Response.json({
-          monthly: {
-            time: ["2026-08"],
-            temperature_2m_mean: [20],
-            temperature_2m_anomaly: [1],
-            precipitation_mean: [30],
-            precipitation_anomaly: [5],
-          },
-        }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-    const provider = new OpenMeteoSeasonalProvider("");
+  const sites = [{ id: "camp", latitude: 49.25, longitude: -123.1 }];
+  const provider = new OpenMeteoSeasonalProvider("");
+  const seasonalResponse = () =>
+    Response.json({
+      monthly: {
+        time: ["2026-08"],
+        temperature_2m_mean: [20],
+        temperature_2m_anomaly: [1],
+        precipitation_mean: [30],
+        precipitation_anomaly: [5],
+      },
+    });
 
-    const [result] = await provider.fetchMonthlyOutlooks([
-      { id: "camp", latitude: 49.25, longitude: -123.1 },
-    ]);
+  it("uses the public seasonal endpoint when an environment override is blank", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => seasonalResponse());
+    vi.stubGlobal("fetch", fetchMock);
+    const [result] = await provider.fetchMonthlyOutlooks(sites);
 
     const request = new URL(String(fetchMock.mock.calls[0][0]));
     expect(request.hostname).toBe("seasonal-api.open-meteo.com");
     expect(request.pathname).toBe("/v1/seasonal");
     expect(result.outlook).toHaveLength(1);
+  });
+
+  it("retries connection timeouts and server errors before returning the batch", async () => {
+    vi.useFakeTimers();
+    vi.stubEnv("FORECAST_OPEN_METEO_MAX_ATTEMPTS", "3");
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockRejectedValueOnce(
+        new TypeError("fetch failed", {
+          cause: Object.assign(new Error("Connect timeout"), {
+            code: "UND_ERR_CONNECT_TIMEOUT",
+          }),
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(seasonalResponse());
+    vi.stubGlobal("fetch", fetchMock);
+    const pending = provider.fetchMonthlyOutlooks(sites);
+    await vi.runAllTimersAsync();
+    expect((await pending)[0].outlook).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("retries a network failure while reading the response body", async () => {
+    vi.useFakeTimers();
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.error(new TypeError("terminated"));
+      },
+    });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(stream))
+      .mockResolvedValueOnce(seasonalResponse());
+    vi.stubGlobal("fetch", fetchMock);
+    const pending = provider.fetchMonthlyOutlooks(sites);
+    await vi.runAllTimersAsync();
+    expect((await pending)[0].outlook).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["2", "Fri, 06 Nov 2026 12:00:02 GMT"])(
+    "honors a Retry-After value of %s",
+    async (retryAfter) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-11-06T12:00:00Z"));
+      const fetchMock = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(
+          new Response(null, {
+            status: 429,
+            headers: { "Retry-After": retryAfter },
+          }),
+        )
+        .mockResolvedValueOnce(seasonalResponse());
+      vi.stubGlobal("fetch", fetchMock);
+      const pending = provider.fetchMonthlyOutlooks(sites);
+      await vi.advanceTimersByTimeAsync(1_999);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      await pending;
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("fails promptly on an invalid request without logging the provider body", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response("private provider details", { status: 400 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(provider.fetchMonthlyOutlooks(sites)).rejects.toThrow(
+      /^Open-Meteo seasonal API returned 400$/,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry before a long provider cooldown expires", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(null, { status: 429, headers: { "Retry-After": "600" } }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(provider.fetchMonthlyOutlooks(sites)).rejects.toThrow(
+      "provider cooldown exceeds two minutes",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops retrying after the configured attempt budget", async () => {
+    vi.useFakeTimers();
+    vi.stubEnv("FORECAST_OPEN_METEO_MAX_ATTEMPTS", "2");
+    const error = new DOMException("Timed out", "TimeoutError");
+    const fetchMock = vi.fn<typeof fetch>().mockRejectedValue(error);
+    vi.stubGlobal("fetch", fetchMock);
+    const pending = expect(provider.fetchMonthlyOutlooks(sites)).rejects.toBe(
+      error,
+    );
+    await vi.runAllTimersAsync();
+    await pending;
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

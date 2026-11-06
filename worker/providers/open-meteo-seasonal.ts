@@ -11,33 +11,87 @@ function required(value: number | null | undefined, name: string) {
   return value;
 }
 
+class SeasonalHttpError extends Error {
+  constructor(
+    readonly status: number,
+    readonly retryAfter: string | null,
+  ) {
+    super(`Open-Meteo seasonal API returned ${status}`);
+  }
+}
+
+function retryAfterMs(header: string | null) {
+  if (!header?.trim()) return undefined;
+  const seconds = Number(header);
+  if (Number.isFinite(seconds))
+    return seconds >= 0 ? seconds * 1_000 : undefined;
+  const date = Date.parse(header);
+  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : undefined;
+}
+
 async function fetchSeasonalWithRetry(url: string) {
   const maximumAttempts = Math.max(
     1,
-    Math.min(6, Number(process.env.FORECAST_OPEN_METEO_MAX_ATTEMPTS) || 6),
+    Math.min(
+      6,
+      Math.trunc(Number(process.env.FORECAST_OPEN_METEO_MAX_ATTEMPTS)) || 6,
+    ),
   );
-  for (let attempt = 0; attempt < maximumAttempts; attempt++) {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(60_000),
-    });
-    if (response.ok) return response;
-    if (response.status !== 429 || attempt === maximumAttempts - 1) {
-      const details = (await response.text()).slice(0, 500);
-      throw new Error(
-        `Open-Meteo seasonal API returned ${response.status}: ${details}`,
-      );
+  const retryBaseMs = Math.max(
+    1,
+    Math.min(
+      60_000,
+      Number(process.env.FORECAST_OPEN_METEO_RETRY_BASE_MS) || 5_000,
+    ),
+  );
+  for (let attempt = 1; ; attempt++) {
+    let reason: string;
+    let delayMs: number;
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => {});
+        throw new SeasonalHttpError(
+          response.status,
+          response.headers.get("retry-after"),
+        );
+      }
+      // Keep body reads inside the retry boundary: a socket can fail after headers arrive.
+      return (await response.json()) as SeasonalPayload | SeasonalPayload[];
+    } catch (error) {
+      if (attempt >= maximumAttempts) throw error;
+      const backoffMs = Math.min(60_000, retryBaseMs * 2 ** (attempt - 1));
+      if (error instanceof SeasonalHttpError) {
+        if (error.status !== 408 && error.status !== 429 && error.status < 500)
+          throw error;
+        reason = `HTTP ${error.status}`;
+        delayMs =
+          retryAfterMs(error.retryAfter) ??
+          (error.status === 429 ? 60_000 : backoffMs);
+        // Don't ignore a longer provider cooldown or hold up the runner indefinitely.
+        if (delayMs > 120_000)
+          throw new Error(
+            `${error.message}; provider cooldown exceeds two minutes`,
+            { cause: error },
+          );
+      } else if (
+        error instanceof TypeError ||
+        (error instanceof DOMException &&
+          ["TimeoutError", "AbortError"].includes(error.name))
+      ) {
+        reason = error.name;
+        delayMs = backoffMs;
+      } else {
+        throw error;
+      }
     }
-    const retryAfter = Number(response.headers.get("retry-after"));
-    const delayMs =
-      Number.isFinite(retryAfter) && retryAfter > 0
-        ? retryAfter * 1_000
-        : 60_000;
     console.warn(
-      `Open-Meteo seasonal API returned 429; retrying attempt ${attempt + 2}/${maximumAttempts} in ${Math.round(delayMs / 1_000)} seconds.`,
+      `Open-Meteo seasonal request failed (${reason}); retrying attempt ${attempt + 1}/${maximumAttempts} in ${Math.round(delayMs / 1_000)} seconds.`,
     );
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
-  throw new Error("Open-Meteo seasonal retry budget was exhausted");
 }
 
 function monthSeasonality(targetMonth: string, latitude: number) {
@@ -90,8 +144,7 @@ export class OpenMeteoSeasonalProvider {
     ])
       params.append("monthly", variable);
     if (this.apiKey) params.set("apikey", this.apiKey);
-    const response = await fetchSeasonalWithRetry(`${this.endpoint}?${params}`);
-    const json = (await response.json()) as SeasonalPayload | SeasonalPayload[];
+    const json = await fetchSeasonalWithRetry(`${this.endpoint}?${params}`);
     const payloads = Array.isArray(json) ? json : [json];
     if (payloads.length !== campgrounds.length)
       throw new Error(

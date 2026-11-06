@@ -92,6 +92,17 @@ The worker needs outbound HTTPS to Open-Meteo and database access. Alert when th
 
 The Admin forecast-coverage export lists up to 5,000 prioritized campgrounds that have both an active versioned habitat profile and a current outlook. Daily schedules are processed before weekly schedules, with the highest priority scores first.
 
+### Monthly outlook retries
+
+The seasonal weather worker retries connection and response-body interruptions,
+timeouts, HTTP 408, HTTP 429, and server errors. It uses up to six attempts,
+60 seconds per request, and exponential backoff starting at five seconds for
+transient network/server failures. For rate limits it waits one minute by default
+and honors `Retry-After`; it stops rather than retrying early if the provider asks
+for more than two minutes. Invalid requests and malformed data are not retried.
+Rerun the same monthly workflow without `MONTHLY_FORECAST_RESET` to resume from
+completed campground batches. Results are published only after processing finishes.
+
 ### Storage maintenance and read-only failures
 
 Forecast retention runs separately at minute 47 every six hours. It shares the
